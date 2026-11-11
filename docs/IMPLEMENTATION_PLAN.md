@@ -1,0 +1,124 @@
+# CampaignHub — Implementation Plan
+
+**Started:** 2026-11-11 · Legend: ☐ pending · 🔶 in progress · ✅ done · ⏭ deferred by design
+
+Phases follow the workflow agreed with the owner: one focus area per development session. Session 1 = Phase 1 (this session). Do not start a later phase before the current phase's checks pass (`npm run lint && npm run typecheck && npm run test && npm run build`).
+
+## Phase 1 — Project foundation (Session 1)
+
+| # | Task | Status |
+|---|---|---|
+| 1.1 | Inspect repo & environment (Node 22.9, PostgreSQL 14, no Docker) | ✅ |
+| 1.2 | Scaffold Next.js 16 (TS, Tailwind v4, ESLint CLI, src dir, App Router) | ✅ |
+| 1.3 | Install deps: Prisma, Auth.js v5, Zod, shadcn/ui, Lucide, Recharts, Vitest | ✅ |
+| 1.4 | Write docs: AGENTS, PRD, ARCHITECTURE, DATABASE, API, UI_DESIGN, IMPLEMENTATION_PLAN, CHANGELOG, TESTING | ✅ |
+| 1.5 | Design PostgreSQL schema (13 entities + enums) in `prisma/schema.prisma` | ✅ |
+| 1.6 | Generate initial migration SQL offline (`prisma migrate diff`) → `0001_init` | ✅ |
+| 1.7 | Env validation (`src/lib/env.ts`), `.env` + `.env.example` | ✅ |
+| 1.8 | Cross-cutting libs: logger, API errors, rate limiter, slug utils | ✅ |
+| 1.9 | Prisma client singleton | ✅ |
+| 1.10 | Auth.js config: JWT sessions, credentials provider, type augmentation | ✅ |
+| 1.11 | `proxy.ts` route protection (Next 16 convention) | ✅ |
+| 1.12 | Password hashing (scrypt) + tests | ✅ |
+| 1.13 | Storage adapter interface + local adapter; upload validation + tests | ✅ |
+| 1.14 | Email service interface + console transport | ✅ |
+| 1.15 | AI service interfaces (no implementations) | ✅ |
+| 1.16 | Design tokens: indigo/slate theme in `globals.css` | ✅ |
+| 1.17 | Marketing layout (header/footer) + public pages: Home, About, Features, Industries, Pricing, Contact | ✅ |
+| 1.18 | Dashboard shell (sidebar/topbar) + dashboard home with real stat queries + empty states | ✅ |
+| 1.19 | Admin layout + admin home (platform stats, empty states) | ✅ |
+| 1.20 | Root error/not-found pages, Toaster | ✅ |
+| 1.21 | Health endpoint `/api/health` | ✅ |
+| 1.22 | Vitest setup + unit tests (password, slug, rate-limit, env, email transport) | ✅ |
+| 1.23 | Seed script: industries, plans, admin, demo business/campaigns/leads/events | ✅ |
+| 1.24 | README with setup instructions | ✅ |
+| 1.25 | Apply migration + seed against live database (local PostgreSQL 14, `campaignhub`) | ✅ |
+| 1.26 | End-to-end verification (health, DB-backed pages, owner/admin login, RBAC & anon redirects) | ✅ |
+
+**Notes:** Login/register/onboarding endpoints are Phase 2 by design (Session 2); nav links exist. Home and pricing read live industry/plan data from the seeded database.
+
+**Phase 1 verification (2026-11-11):** `npm run lint` clean · `npm run typecheck` clean · `npm run test` 48/48 passing (9 files) · `npm run build` succeeds (6 static, 6 dynamic routes, proxy registered) · live DB: `0001_init` applied, seed idempotent on re-run · `/api/health` → `{"status":"ok","database":"up"}` · owner login → `/dashboard` 200 with business name + lead stats · admin login → `/admin` 200 with platform totals · business user hitting `/admin` → 302 `/dashboard` · anonymous `/dashboard` & `/admin` → 307 `/login?callbackUrl=…`.
+
+## Phase 2 — Business module (Session 2)
+
+| # | Task | Status |
+|---|---|---|
+| 2.1 | Registration endpoint + form (owner account) | ☐ |
+| 2.2 | Login page (Auth.js credentials flow) + logout | ☐ |
+| 2.3 | Multi-step onboarding (business details → logo upload → complete) | ☐ |
+| 2.4 | Business profile view/edit | ☐ |
+| 2.5 | Team invitations (email + token, role) | ☐ |
+| 2.6 | RBAC enforcement helpers + tests | ☐ |
+| 2.7 | Notifications (lead created, member invited) | ☐ |
+| 2.8 | Dashboard home: stat cards + recent lists with filters | ☐ |
+| 2.9 | Session 1 leftover verification (login e2e against seeded users) | ☐ |
+
+## Phase 3 — Campaign module (Session 3)
+
+| # | Task | Status |
+|---|---|---|
+| 3.1 | Campaign CRUD APIs + validation | ☐ |
+| 3.2 | Campaign creation form (sections: basic/promo/targeting/CTA) | ☐ |
+| 3.3 | Image upload (multi, validated) | ☐ |
+| 3.4 | Campaign list page (filters, search, pagination) | ☐ |
+| 3.5 | Campaign detail + edit | ☐ |
+| 3.6 | Publish/pause/complete/archive lifecycle | ☐ |
+| 3.7 | Industry landing templates (shared design system; real-estate, finance, education, healthcare, retail variants) | ☐ |
+| 3.8 | Public campaign URL `/c/[slug]` + preview | ☐ |
+
+## Phase 4 — Lead module (Session 4)
+
+| # | Task | Status |
+|---|---|---|
+| 4.1 | Public enquiry form (consent + privacy notice) + intake API (rate-limited, validated, deduped) | ☐ |
+| 4.2 | Lead list page (search/filters/pagination) | ☐ |
+| 4.3 | Lead detail: timeline, notes, follow-ups | ☐ |
+| 4.4 | Status updates + assignment | ☐ |
+| 4.5 | Quick actions (tel/mailto/wa.me links) | ☐ |
+| 4.6 | CSV export | ☐ |
+
+## Phase 5 — Analytics (Session 5)
+
+| # | Task | Status |
+|---|---|---|
+| 5.1 | Page-view tracking (visitor cookie + beacon) | ☐ |
+| 5.2 | Analytics services (views, unique visitors, conversion rate) | ☐ |
+| 5.3 | Dashboard charts (Recharts): leads over time, campaign performance, conversion, comparison | ☐ |
+| 5.4 | Date-range + campaign filters | ☐ |
+| 5.5 | Leads-by-location table | ☐ |
+
+## Phase 6 — Platform administration
+
+| # | Task | Status |
+|---|---|---|
+| 6.1 | Admin: businesses list/suspend | ☐ |
+| 6.2 | Admin: industry management | ☐ |
+| 6.3 | Admin: plan management | ☐ |
+| 6.4 | Admin: campaign monitoring | ☐ |
+| 6.5 | Admin: platform statistics | ☐ |
+
+## Phase 7 — AI integration
+
+| # | Task | Status |
+|---|---|---|
+| 7.1 | Choose provider; implement `AiContentService` (headlines/descriptions/CTA) | ☐ |
+| 7.2 | Landing-page content generation | ☐ |
+| 7.3 | Campaign assistant (audience/improvement suggestions) | ☐ |
+| 7.4 | Lead qualification (transparent rule-based scoring first, LLM assist later) | ☐ |
+| 7.5 | Follow-up assistant | ☐ |
+
+## Phase 8 — Production readiness
+
+| # | Task | Status |
+|---|---|---|
+| 8.1 | API integration tests (route handlers vs test DB) | ☐ |
+| 8.2 | Playwright e2e (register → onboarding → campaign → lead) | ☐ |
+| 8.3 | Dockerfile + docker-compose (app + postgres) | ☐ |
+| 8.4 | Deployment docs (Cloud Run, Cloud SQL, GCS, Secret Manager) | ☐ |
+| 8.5 | Security review + rate-limit/audit spot checks | ☐ |
+| 8.6 | Performance pass (indexes, roll-ups if needed) | ☐ |
+
+## Dependency notes
+
+- Phase 1 is complete and verified against the local PostgreSQL 14 database.
+- Phase 2 depends on Phase 1 auth plumbing; Phase 3 on industries + storage; Phase 4 on 3.7/3.8; Phase 5 on 4.1.

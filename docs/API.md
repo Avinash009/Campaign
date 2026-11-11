@@ -1,0 +1,127 @@
+# CampaignHub — API Design
+
+**Version:** 0.1.0 · Base path: `/api` · All request/response bodies are JSON unless noted.
+
+## 1. Conventions
+
+- **Auth:** Auth.js session cookie (httpOnly, SameSite=Lax, JWT). `401` unauthenticated, `403` unauthorized. Business endpoints require an active membership; the tenant is resolved from the session, never from the request body.
+- **Validation:** Zod schemas server-side; invalid input → `400` with per-field details.
+- **Error envelope:**
+
+```json
+{ "error": { "code": "campaign_not_found", "message": "Campaign not found.", "details": {} } }
+```
+
+Common codes: `validation_failed`, `unauthorized`, `forbidden`, `not_found`, `conflict`, `rate_limited`, `internal_error`.
+
+- **Pagination:** list endpoints accept `?page=1&pageSize=20` and return `{ data: [...], pagination: { page, pageSize, total, totalPages } }`.
+- **Rate limits:** public endpoints return `429` with `Retry-After` seconds. Enquiry submit: 5/hour/IP; login/register: 10/hour/IP.
+- **Success:** `200` (GET/PUT/PATCH), `201` (POST create).
+
+## 2. Authorization matrix
+
+| Area | Endpoint prefix | Who |
+|---|---|---|
+| Auth | `/api/auth/*` | Public (Auth.js handlers) |
+| Public campaign | `/api/public/campaigns/*` | Public, rate-limited |
+| Business self | `/api/business/*` | Owner/Admin unless noted (profile, team, subscription) |
+| Campaigns | `/api/campaigns/*` | Member: read; Owner/Admin: write |
+| Leads | `/api/leads/*` | Member: assigned leads + notes/status on assigned; Owner/Admin: all in business |
+| Analytics | `/api/analytics/*` | Any active member |
+| Admin | `/api/admin/*` | Platform admin only |
+
+## 3. Endpoint catalog
+
+> Status column: ✅ implemented · 🔜 planned phase (P2…P6). Phase 1 implements only the auth route plumbing + health.
+
+### Auth & session
+
+| Method | Path | Description | Status |
+|---|---|---|---|
+| * | `/api/auth/[...nextauth]` | Auth.js handlers (login, logout, session) | ✅ P1 |
+
+### Registration & onboarding (P2)
+
+| Method | Path | Body / Response | Status |
+|---|---|---|---|
+| POST | `/api/auth/register` | `{ ownerName, email, password }` → `201 { userId }` | 🔜 |
+| POST | `/api/business/onboarding` | `{ businessName, businessEmail, phone, industrySlug, website?, city?, state?, description? }` → `201 { businessId }` | 🔜 |
+| POST | `/api/business/logo` | multipart image → `200 { logoUrl }` | 🔜 |
+| GET/PATCH | `/api/business/profile` | business profile read/update | 🔜 |
+| GET | `/api/business/team` | list members | 🔜 |
+| POST | `/api/business/team/invite` | `{ email, role }` → creates `INVITED` member + email (dev transport logs) | 🔜 |
+| POST | `/api/business/team/invite/accept` | `{ token }` → binds invitee user | 🔜 |
+
+### Industries (P2)
+
+| Method | Path | Description | Status |
+|---|---|---|---|
+| GET | `/api/industries` | active industries (public) | 🔜 |
+
+### Campaigns (P3)
+
+| Method | Path | Body / Response | Status |
+|---|---|---|---|
+| GET | `/api/campaigns?page&status&search` | paginated campaigns for session business | 🔜 |
+| POST | `/api/campaigns` | full campaign payload (basic + promo + targeting + CTA) → `201 { id, slug }` | 🔜 |
+| GET | `/api/campaigns/:id` | campaign detail (images included) | 🔜 |
+| PATCH | `/api/campaigns/:id` | partial update | 🔜 |
+| POST | `/api/campaigns/:id/status` | `{ status }` — publish/pause/complete/archive with lifecycle validation | 🔜 |
+| POST | `/api/campaigns/:id/images` | multipart images[] → validated, stored via storage adapter | 🔜 |
+| DELETE | `/api/campaigns/:id/images/:imageId` | remove image | 🔜 |
+
+### Public campaign & enquiries (P3/P4)
+
+| Method | Path | Description | Status |
+|---|---|---|---|
+| GET | `/api/public/campaigns/:slug` | published campaign data for landing page (no tenant info beyond public fields) | 🔜 |
+| POST | `/api/public/campaigns/:slug/events` | `{ type: "page_view", visitorId, utm… }` — rate-limited beacon | 🔜 |
+| POST | `/api/public/campaigns/:slug/enquiry` | `{ name, phone, email?, city?, message?, consent: true, visitorId?, utm… }` → `201 { reference }`; dedupes same phone+campaign in 24h | 🔜 |
+
+### Leads (P4)
+
+| Method | Path | Description | Status |
+|---|---|---|---|
+| GET | `/api/leads?status&campaignId&assignedTo&from&to&search&page` | filtered list (role-scoped) | 🔜 |
+| GET | `/api/leads/:id` | detail incl. activities | 🔜 |
+| PATCH | `/api/leads/:id/status` | `{ status, note? }` → records activity | 🔜 |
+| PATCH | `/api/leads/:id/assign` | `{ userId }` (Owner/Admin) | 🔜 |
+| POST | `/api/leads/:id/notes` | `{ note }` → activity | 🔜 |
+| POST | `/api/leads/:id/follow-up` | `{ scheduledFor }` → activity | 🔜 |
+| GET | `/api/leads/export.csv?filters…` | CSV export (same filters as list) | 🔜 |
+
+### Analytics (P5)
+
+| Method | Path | Description | Status |
+|---|---|---|---|
+| GET | `/api/analytics/summary?from&to&campaignId` | dashboard summary cards | 🔜 |
+| GET | `/api/analytics/leads-over-time?…` | daily lead counts | 🔜 |
+| GET | `/api/analytics/campaign-performance?…` | per-campaign views/visitors/leads/conversion | 🔜 |
+| GET | `/api/analytics/leads-by-location?…` | city breakdown | 🔜 |
+
+### Notifications (P2+)
+
+| Method | Path | Description | Status |
+|---|---|---|---|
+| GET | `/api/notifications` | my notifications | 🔜 |
+| POST | `/api/notifications/:id/read` | mark read | 🔜 |
+
+### Platform admin (P6)
+
+| Method | Path | Description | Status |
+|---|---|---|---|
+| GET | `/api/admin/statistics` | platform totals | 🔜 |
+| GET | `/api/admin/businesses?page&search&status` | all businesses | 🔜 |
+| PATCH | `/api/admin/businesses/:id/status` | `{ status }` suspend/activate | 🔜 |
+| GET/PATCH | `/api/admin/industries` | industry catalog management | 🔜 |
+| GET/PATCH | `/api/admin/plans` | subscription plan management | 🔜 |
+
+### Health
+
+| Method | Path | Description | Status |
+|---|---|---|---|
+| GET | `/api/health` | `{ status, database }` — used by Cloud Run checks | ✅ P1 |
+
+## 4. Webhooks / AI (future)
+
+AI generation endpoints are designed as thin wrappers over `src/modules/ai/` service interfaces (Phase 7). No endpoint will be exposed before a real provider integration exists.

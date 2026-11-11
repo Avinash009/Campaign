@@ -1,36 +1,93 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# CampaignHub
 
-## Getting Started
+Multi-tenant SaaS for advertising & lead generation. Businesses create
+promotional campaigns, publish landing pages at public URLs, collect
+customer enquiries as structured leads, and manage them to closure.
 
-First, run the development server:
+> **Honest scope (MVP):** CampaignHub creates promotional landing pages and
+> manages the enquiries they generate. It does **not** place ads on Google or
+> Meta, does not fake AI features, and does not send email without a real
+> provider — see `docs/PRD.md` §6.
+
+## Stack
+
+- Next.js 16 (App Router, TypeScript strict, Turbopack) · `proxy.ts` replaces `middleware.ts`
+- Tailwind CSS v4 + shadcn/ui (Radix, Nova preset) + Lucide + Recharts
+- PostgreSQL 14+ with Prisma ORM (migrations in `prisma/migrations/`)
+- Auth.js v5 (credentials provider, JWT sessions, scrypt password hashing)
+- Zod validation everywhere server-side · Vitest unit tests
+- Modular monolith: all domain logic in `src/modules/<module>/`
+
+## Project setup
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install                 # dependencies
+cp .env.example .env        # then fill in DATABASE_URL + AUTH_SECRET
+npm run db:migrate:dev      # apply migrations to your local PostgreSQL
+npm run db:seed             # industries, plans, admin + demo business data
+npm run dev                 # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Required env vars (see `.env.example` for all):
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+| Variable | Purpose |
+|---|---|
+| `DATABASE_URL` | PostgreSQL connection string |
+| `AUTH_SECRET` | Auth.js session secret (`openssl rand -base64 32`) |
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### Seeded accounts (development only)
 
-## Learn More
+The seed script is idempotent and creates fictional demo data
+("Sri Green Realty"). Passwords come from `.env`
+(`ADMIN_*`, `DEMO_*`) or are generated randomly and logged once.
 
-To learn more about Next.js, take a look at the following resources:
+| Account | Email (default) | Role |
+|---|---|---|
+| Platform admin | `admin@campaignhub.test` | `/admin` |
+| Demo owner | `owner@srigeenrealty.test` | `/dashboard` (OWNER) |
+| Demo member | `member@srigeenrealty.test` | `/dashboard` (MEMBER) |
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Sign-in UI ships in Phase 2 (see `docs/IMPLEMENTATION_PLAN.md`).
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Commands
 
-## Deploy on Vercel
+```bash
+npm run dev            # development server
+npm run build          # production build
+npm run start          # run production build
+npm run lint           # ESLint CLI
+npm run typecheck      # tsc --noEmit
+npm run test           # Vitest (unit tests)
+npm run test:watch     # Vitest watch mode
+npm run db:migrate:dev # create/apply migrations locally
+npm run db:migrate     # apply committed migrations (deploy)
+npm run db:seed        # seed script
+npm run db:studio      # Prisma Studio
+npm run db:generate    # regenerate Prisma client
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Documentation
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+| Document | Contents |
+|---|---|
+| `docs/PRD.md` | Product requirements, roles, modules, constraints |
+| `docs/ARCHITECTURE.md` | System design, layering, tenancy, rendering strategy |
+| `docs/DATABASE.md` | Schema design, ER diagram, indexes, seed data |
+| `docs/API.md` | REST API conventions + endpoint catalog |
+| `docs/UI_DESIGN.md` | Design system, tokens, page templates |
+| `docs/IMPLEMENTATION_PLAN.md` | Phase-by-phase task tracker |
+| `docs/TESTING.md` | Test strategy per module |
+| `docs/CHANGELOG.md` | Notable changes |
+
+Agent/contributor rules live in `AGENTS.md` — read them before changing code.
+
+## Roadmap
+
+1. ✅ Phase 1 — foundation (schema, auth plumbing, shells, marketing site)
+2. Phase 2 — registration, login, onboarding, team invites
+3. Phase 3 — campaigns + industry landing pages (`/c/{slug}`)
+4. Phase 4 — lead pipeline, follow-ups, CSV export
+5. Phase 5 — analytics (views, visitors, conversion)
+6. Phase 6 — platform administration
+7. Phase 7 — AI features (behind real integrations)
+8. Phase 8 — Docker, Cloud Run deployment, e2e tests
