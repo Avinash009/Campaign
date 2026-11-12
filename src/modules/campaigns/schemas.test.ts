@@ -97,6 +97,32 @@ describe("campaignInputSchema", () => {
     expect(parsed.endDate?.toISOString()).toBe("2026-11-30T00:00:00.000Z")
   })
 
+  it("also accepts full ISO datetime strings (JSON-serialized dates)", () => {
+    const parsed = campaignInputSchema.parse({
+      ...validCampaign,
+      startDate: "2026-11-01T00:00:00.000Z",
+      endDate: "2026-11-30T00:00:00.000Z",
+    })
+    expect(parsed.startDate?.toISOString()).toBe("2026-11-01T00:00:00.000Z")
+    expect(parsed.endDate?.toISOString()).toBe("2026-11-30T00:00:00.000Z")
+  })
+
+  it("returns validation errors instead of throwing for malformed dates", () => {
+    expect(() =>
+      campaignInputSchema.safeParse({ ...validCampaign, endDate: "not-a-date" }),
+    ).not.toThrow()
+
+    const malformed = campaignInputSchema.safeParse({
+      ...validCampaign,
+      startDate: "2026-11-01",
+      endDate: "not-a-date",
+    })
+    expect(malformed.success).toBe(false)
+    if (!malformed.success) {
+      expect(malformed.error.issues.some((issue) => issue.path.includes("endDate"))).toBe(true)
+    }
+  })
+
   it("rejects an end date before the start date", () => {
     const result = campaignInputSchema.safeParse({
       ...validCampaign,

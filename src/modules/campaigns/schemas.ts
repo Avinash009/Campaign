@@ -73,18 +73,25 @@ const optionalUrl = z
   .optional()
   .transform(emptyToUndefined)
 
-/** `<input type="date">` value (`YYYY-MM-DD`) → UTC midnight Date. */
+/**
+ * Accepts an `<input type="date">` value (`YYYY-MM-DD`) or a full ISO datetime
+ * string (JSON.stringify turns a Date into one). Both become a `Date`; the
+ * date-only form is anchored to UTC midnight.
+ */
+function parseDateInput(value: string): Date | null {
+  const candidate = /^\d{4}-\d{2}-\d{2}$/.test(value) ? `${value}T00:00:00.000Z` : value
+  const date = new Date(candidate)
+  return Number.isNaN(date.getTime()) ? null : date
+}
+
 const optionalDate = z
   .string()
   .trim()
-  .refine(
-    (value) => value === "" || !Number.isNaN(Date.parse(`${value}T00:00:00.000Z`)),
-    { error: "Enter a valid date." },
-  )
+  .refine((value) => value === "" || parseDateInput(value) !== null, {
+    error: "Enter a valid date.",
+  })
   .optional()
-  .transform((value) =>
-    value === undefined || value === "" ? undefined : new Date(`${value}T00:00:00.000Z`),
-  )
+  .transform((value) => (value === undefined || value === "" ? undefined : (parseDateInput(value) ?? undefined)))
 
 /** Rupees as typed by the user → integer paise. */
 const optionalPriceRupees = z
@@ -146,15 +153,20 @@ const campaignFields = z.object({
 
 export const campaignInputSchema = campaignFields
   .refine(
-    (value) =>
-      !value.startDate || !value.endDate || value.endDate.getTime() >= value.startDate.getTime(),
+    (value) => {
+      // Guard the type so a failed date field can never crash validation.
+      if (!(value.startDate instanceof Date) || !(value.endDate instanceof Date)) return true
+      return value.endDate.getTime() >= value.startDate.getTime()
+    },
     { error: "End date must be on or after the start date.", path: ["endDate"] },
   )
   .refine(
-    (value) =>
-      value.ageRangeMin === undefined ||
-      value.ageRangeMax === undefined ||
-      value.ageRangeMax >= value.ageRangeMin,
+    (value) => {
+      if (typeof value.ageRangeMin !== "number" || typeof value.ageRangeMax !== "number") {
+        return true
+      }
+      return value.ageRangeMax >= value.ageRangeMin
+    },
     { error: "Maximum age must be at least the minimum age.", path: ["ageRangeMax"] },
   )
   .transform(({ priceRupees, interestsText, ...rest }) => ({

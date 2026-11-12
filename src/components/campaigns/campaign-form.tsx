@@ -103,6 +103,7 @@ export function CampaignForm({
     register,
     control,
     handleSubmit,
+    getValues,
     setError,
     formState: { errors, isDirty },
   } = useForm<CampaignFormValues, unknown, CampaignInput>({
@@ -113,7 +114,14 @@ export function CampaignForm({
 
   const selectedObjective = useWatch({ control, name: "objective" }) ?? "LEAD_GENERATION"
 
-  async function onSubmit(input: CampaignInput) {
+  /**
+   * Submits the *raw* form values (dates as `YYYY-MM-DD`, rupees as text,
+   * interests as a comma-separated string). The API schema owns the
+   * parsing/transforms, so sending its parsed output here would double-convert
+   * dates to ISO strings and drop `priceRupees`/`interestsText`.
+   */
+  async function onSubmit() {
+    const input = getValues()
     setPending(true)
     setFormError(null)
     try {

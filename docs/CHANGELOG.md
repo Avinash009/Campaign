@@ -50,15 +50,31 @@ All notable changes to CampaignHub are documented here. Format follows
   (`tel:`, `mailto:`, `wa.me`) and the page states that the online enquiry form
   arrives with the leads milestone. No ad-platform publishing is implied.
 
+### Fixed
+
+- Creating a campaign from the dashboard no longer returns a 500. The form was
+  submitting the resolver's parsed output (dates as ISO strings, `priceInPaise`
+  and `interests` instead of `priceRupees`/`interestsText`), so the cross-field
+  date check called `.getTime()` on a string. The form now submits the raw
+  values and the schema's date checks are type-guarded, so malformed dates
+  return a 400 field error instead. Full ISO datetime strings are still
+  accepted, keeping API clients that send parsed dates working.
+
 ### Verified
 
-- `npm run lint` clean · `npm run typecheck` clean · `npm run test` 103/103
+- `npm run lint` clean · `npm run typecheck` clean · `npm run test` 105/105
   passing (15 files) · `npm run build` succeeds (38 routes).
 - Live against local PostgreSQL (29 checks): plan-limit rejection, draft
   privacy, preview banner, publish/pause/resume/complete/archive, slug stability
   on rename, incomplete-publish details, image upload/remove, tenant-scoped 404s
   and MEMBER 403s. Test rows and uploads were removed; the demo plan was
   restored to Starter.
+- Browser end-to-end check of the create form after the fix: the campaign saved
+  with price in paise, `YYYY-MM-DD` dates as UTC midnight, interests parsed from
+  the comma-separated field and the chosen industry applied; a malformed date
+  payload returns `400 validation_failed` and an ISO-datetime payload creates the
+  campaign. Verification rows were removed and the demo plan restored to
+  Starter.
 
 ## [0.2.0] — 2026-11-11 (Session 2: Business module)
 
