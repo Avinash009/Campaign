@@ -9,5 +9,5 @@ import { auth } from "@/auth"
 export default auth
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/admin/:path*", "/login", "/register"],
+  matcher: ["/dashboard/:path*", "/admin/:path*", "/onboarding", "/login", "/register"],
 }

@@ -1,15 +1,20 @@
+import Link from "next/link"
 import { Megaphone, Users } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { EmptyState } from "@/components/shared/empty-state"
 import { CampaignStatusBadge, LeadStatusBadge } from "@/components/shared/status-badge"
 import { StatCard } from "@/components/shared/stat-card"
 import {
+  DASHBOARD_PERIODS,
+  PERIOD_LABELS,
   getDashboardSummary,
   getRecentCampaigns,
   getRecentLeads,
+  parseDashboardPeriod,
 } from "@/modules/dashboard/service"
 import { requireBusinessContext } from "@/modules/auth/session"
 import { formatDate } from "@/lib/format"
+import { cn } from "@/lib/utils"
 import {
   BadgeCheck,
   CheckCircle2,
@@ -24,27 +29,59 @@ export const metadata = {
   title: "Dashboard",
 }
 
-export default async function DashboardPage() {
+export default async function DashboardPage({ searchParams }: PageProps<"/dashboard">) {
   const context = await requireBusinessContext()
+  const params = await searchParams
+  const period = parseDashboardPeriod(params.period)
 
   const [summary, recentCampaigns, recentLeads] = await Promise.all([
-    getDashboardSummary(context.businessId),
-    getRecentCampaigns(context.businessId),
-    getRecentLeads(context.businessId),
+    getDashboardSummary(context.businessId, period),
+    getRecentCampaigns(context.businessId, { period }),
+    getRecentLeads(context.businessId, { period }),
   ])
 
   return (
     <div className="space-y-8">
-      <div className="space-y-1">
-        <h1 className="text-2xl font-semibold tracking-tight">Dashboard</h1>
-        <p className="text-sm text-muted-foreground">
-          {context.businessName} · {context.role === "OWNER" ? "Owner" : context.role === "ADMIN" ? "Admin" : "Member"} view
-        </p>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div className="space-y-1">
+          <h1 className="text-2xl font-semibold tracking-tight">Dashboard</h1>
+          <p className="text-sm text-muted-foreground">
+            {context.businessName} ·{" "}
+            {context.role === "OWNER" ? "Owner" : context.role === "ADMIN" ? "Admin" : "Member"}{" "}
+            view
+          </p>
+        </div>
+
+        <nav aria-label="Dashboard period" className="flex flex-wrap gap-1.5">
+          {DASHBOARD_PERIODS.map((option) => {
+            const active = option === period
+            return (
+              <Link
+                key={option}
+                href={option === "all" ? "/dashboard" : `/dashboard?period=${option}`}
+                aria-current={active ? "page" : undefined}
+                className={cn(
+                  "rounded-md border px-2.5 py-1 text-xs font-medium transition-colors",
+                  active
+                    ? "border-primary/30 bg-primary/10 text-primary"
+                    : "border-border text-muted-foreground hover:bg-muted hover:text-foreground",
+                )}
+              >
+                {PERIOD_LABELS[option]}
+              </Link>
+            )
+          })}
+        </nav>
       </div>
 
       {/* Summary cards */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <StatCard label="Total campaigns" value={summary.totalCampaigns} icon={Megaphone} />
+        <StatCard
+          label="Total campaigns"
+          value={summary.totalCampaigns}
+          icon={Megaphone}
+          description={PERIOD_LABELS[period]}
+        />
         <StatCard label="Active campaigns" value={summary.activeCampaigns} icon={Rocket} />
         <StatCard label="Total leads" value={summary.totalLeads} icon={Users} />
         <StatCard label="New leads" value={summary.newLeads} icon={Inbox} />
@@ -59,14 +96,14 @@ export default async function DashboardPage() {
             <CardTitle className="flex items-center gap-2">
               <Megaphone className="size-4 text-primary" aria-hidden /> Recent campaigns
             </CardTitle>
-            <CardDescription>The latest campaigns created for this business.</CardDescription>
+            <CardDescription>The newest campaigns created in this period.</CardDescription>
           </CardHeader>
           <CardContent>
             {recentCampaigns.length === 0 ? (
               <EmptyState
                 icon={Megaphone}
-                title="No campaigns yet"
-                description="Campaign creation arrives with the campaigns milestone — your first promotional page is coming soon."
+                title="No campaigns in this period"
+                description="Campaign creation arrives with the campaigns milestone. Try a wider date range once you have campaigns."
               />
             ) : (
               <ul className="divide-y divide-border">
@@ -91,13 +128,13 @@ export default async function DashboardPage() {
             <CardTitle className="flex items-center gap-2">
               <Users className="size-4 text-primary" aria-hidden /> Latest enquiries
             </CardTitle>
-            <CardDescription>Newest leads from your campaign pages.</CardDescription>
+            <CardDescription>Newest leads from your campaign pages in this period.</CardDescription>
           </CardHeader>
           <CardContent>
             {recentLeads.length === 0 ? (
               <EmptyState
                 icon={Inbox}
-                title="No enquiries yet"
+                title="No enquiries in this period"
                 description="Leads appear here as soon as customers submit your campaign enquiry forms."
               />
             ) : (
@@ -137,7 +174,6 @@ export default async function DashboardPage() {
         </CardHeader>
         <CardContent>
           <ul className="list-inside list-disc space-y-1 text-sm text-muted-foreground">
-            <li>Business registration &amp; team invitations (next milestone)</li>
             <li>Campaign creation with industry landing pages</li>
             <li>Lead pipeline with follow-ups and CSV export</li>
             <li>Analytics charts for views, visitors and conversion</li>

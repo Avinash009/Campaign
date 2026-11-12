@@ -4,6 +4,68 @@ All notable changes to CampaignHub are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/); versioning is
 [SemVer](https://semver.org/).
 
+## [0.2.0] — 2026-11-11 (Session 2: Business module)
+
+### Added
+
+- Owner registration: `POST /api/auth/register` (rate-limited, Zod-validated,
+  duplicate-email 409, scrypt hashing, audit log, console welcome email that
+  honestly reports `delivered: false`) and the `/register` form with consent
+  notice and password confirmation.
+- Credentials sign-in: real `/login` page (react-hook-form + Zod, `callbackUrl`
+  support, admin→`/admin`, everyone else→`/dashboard`) and login rate limiting
+  (10 attempts/hour/IP) inside the Auth.js `authorize` callback.
+- Three-step onboarding wizard at `/onboarding` (business details → logo →
+  review) creating the business, OWNER membership and a 14-day TRIALING
+  subscription on the starter plan in one transaction. Emits audit + in-app
+  notification events.
+- Business profile view/edit via `GET/PATCH /api/business/profile` and
+  `/dashboard/settings` (owners and admins can edit; members get a read-only
+  view). Logo uploads through `POST /api/business/logo` with type/size
+  validation and owned-URL checks.
+- Team invitations: `GET /api/business/team`, `POST /api/business/team/invite`
+  (ADMIN/MEMBER only, 7-day expiring token, seat-limit enforcement from the
+  plan, resend reuses the seat), `POST /api/business/team/invite/accept`
+  (email must match the session), `/dashboard/team` and `/invite/[token]`.
+  Because the console email transport cannot deliver, the invite UI always
+  displays the link and states that no email was sent.
+- RBAC helpers (`OWNER`/`ADMIN`/`MEMBER` capabilities) with unit tests; audit
+  logging for registration, onboarding, profile updates and team changes;
+  in-app notification service for team events.
+- Dashboard period filter (`?period=7d|30d|90d|all`) applied to stat cards and
+  recent campaigns/leads, with pure helper tests.
+
+### Schema
+
+- `BusinessMember.invitationExpiresAt` (nullable) + migration
+  `20261111075602_invitation_expiry`. Invitation tokens are unique; expired or
+  used invites are rejected by the service.
+
+### Decisions
+
+- Registration creates the user only; the tenant (business + membership + trial)
+  is created in onboarding so a business never exists without real details.
+- JWT sessions keep serving the proxy, but secure business context is always
+  re-read from the database — a stale `businessId` after onboarding or accepting
+  an invite is harmless.
+- Ownership is never grantable by invitation. Invitations use `BusinessMember`
+  rows (`status: INVITED`) rather than a separate token table.
+- Email remains interface + console transport; the UI never claims delivery.
+
+### Verified
+
+- `npm run lint` clean · `npm run typecheck` clean · `npm run test` 72/72
+  passing (12 files) · `npm run build` succeeds.
+- Live end-to-end against local PostgreSQL: register → onboarding → dashboard;
+  invite → second account accepts; MEMBER gets 403 on invite/profile edit;
+  seeded owner/admin logins still work.
+
+### Known pending
+
+- Notification API routes + bell UI (service exists; lead-created events arrive
+  with Phase 4).
+- Campaign, lead and analytics modules (Phases 3–5).
+
 ## [0.1.0] — 2026-11-11 (Session 1: Architecture + Phase 1 foundation)
 
 ### Added

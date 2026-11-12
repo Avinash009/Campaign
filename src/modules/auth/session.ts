@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation"
 import { auth } from "@/auth"
 import { prisma } from "@/lib/prisma"
+import { ApiError } from "@/lib/errors"
 import type { UserRole } from "@prisma/client"
 
 /**
@@ -72,4 +73,24 @@ export async function requirePlatformAdmin() {
   if (!session?.user?.id) redirect("/login")
   if (!session.user.isPlatformAdmin) redirect("/dashboard")
   return session
+}
+
+// ---------------------------------------------------------------------------
+// API variants — throw ApiError instead of redirecting (route handlers)
+// ---------------------------------------------------------------------------
+
+/** Requires a signed-in user in a route handler. */
+export async function requireApiUser() {
+  const session = await auth()
+  if (!session?.user?.id) throw ApiError.unauthorized()
+  return session
+}
+
+/** Requires an active business membership in a route handler. */
+export async function requireApiBusinessContext(): Promise<BusinessContext> {
+  const context = await getBusinessContext()
+  if (!context) {
+    throw ApiError.forbidden("You need an active business profile to do that.")
+  }
+  return context
 }

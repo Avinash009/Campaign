@@ -29,6 +29,9 @@ export const authConfig = {
       // Business app: require a session.
       if (pathname.startsWith("/dashboard")) return Boolean(user)
 
+      // Onboarding requires a session but no business membership yet.
+      if (pathname === "/onboarding") return Boolean(user)
+
       // Already signed in? Skip the auth pages.
       if (isAuthPage && user) {
         return Response.redirect(new URL("/dashboard", request.nextUrl))

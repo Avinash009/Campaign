@@ -2,15 +2,14 @@
 
 import Link from "next/link"
 import { signOut } from "next-auth/react"
-import { Building2, Home } from "lucide-react"
+import { Building2, Home, Rocket } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
 
 /**
  * Rendered when a signed-in user has no active business membership.
- * Business registration/onboarding ships in Phase 2; redirecting to /login
- * would loop (logged-in users get bounced back), so we explain instead.
+ * Redirecting to /login would loop (logged-in users get bounced back), so we
+ * point them at the onboarding wizard instead.
  */
 export function NoBusinessState({ userName }: { userName: string }) {
   return (
@@ -26,19 +25,22 @@ export function NoBusinessState({ userName }: { userName: string }) {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex items-center gap-2">
-            <Badge variant="outline" className="text-muted-foreground">Coming soon</Badge>
-            <p className="text-sm text-muted-foreground">
-              Business registration opens with the next milestone.
-            </p>
-          </div>
+          <p className="text-sm text-muted-foreground">
+            Add your business details to create your profile and start a 14-day free
+            trial. You can invite teammates once your business exists.
+          </p>
           <div className="flex flex-wrap gap-3">
+            <Button asChild>
+              <Link href="/onboarding">
+                <Rocket className="size-4" aria-hidden /> Set up your business
+              </Link>
+            </Button>
             <Button variant="outline" asChild>
               <Link href="/">
                 <Home className="size-4" aria-hidden /> Back to home
               </Link>
             </Button>
-            <Button variant="outline" onClick={() => signOut({ redirectTo: "/" })}>
+            <Button variant="ghost" onClick={() => signOut({ redirectTo: "/" })}>
               Sign out
             </Button>
           </div>

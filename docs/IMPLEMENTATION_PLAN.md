@@ -43,15 +43,18 @@ Phases follow the workflow agreed with the owner: one focus area per development
 
 | # | Task | Status |
 |---|---|---|
-| 2.1 | Registration endpoint + form (owner account) | ☐ |
-| 2.2 | Login page (Auth.js credentials flow) + logout | ☐ |
-| 2.3 | Multi-step onboarding (business details → logo upload → complete) | ☐ |
-| 2.4 | Business profile view/edit | ☐ |
-| 2.5 | Team invitations (email + token, role) | ☐ |
-| 2.6 | RBAC enforcement helpers + tests | ☐ |
-| 2.7 | Notifications (lead created, member invited) | ☐ |
-| 2.8 | Dashboard home: stat cards + recent lists with filters | ☐ |
-| 2.9 | Session 1 leftover verification (login e2e against seeded users) | ☐ |
+| 2.1 | Registration endpoint + form (owner account) | ✅ |
+| 2.2 | Login page (Auth.js credentials flow) + logout | ✅ |
+| 2.3 | Multi-step onboarding (business details → logo upload → complete) | ✅ |
+| 2.4 | Business profile view/edit | ✅ |
+| 2.5 | Team invitations (email + token, role) | ✅ |
+| 2.6 | RBAC enforcement helpers + tests | ✅ |
+| 2.7 | Notifications (lead created, member invited) | ✅ (team + onboarding; lead-created wiring lands with Phase 4) |
+| 2.8 | Dashboard home: stat cards + recent lists with filters | ✅ |
+| 2.9 | Session 1 leftover verification (login e2e against seeded users) | ✅ |
+
+**Phase 2 verification (2026-11-11):** `npm run lint` clean · `npm run typecheck` clean · `npm run test` 72/72 passing (12 files) · `npm run build` succeeds (25 routes incl. `/onboarding`, `/invite/[token]`, 7 Phase 2 API routes) · live flow: register owner → sign in → onboarding creates business + OWNER membership + 14-day TRIALING starter subscription → dashboard 200 · invite teammate returns an invite link (console email transport reports `delivered: false`, UI says so) → second account accepts → MEMBER sees dashboard, gets 403 on invite/profile edit · seeded owner/admin logins still work.
+
 
 ## Phase 3 — Campaign module (Session 3)
 

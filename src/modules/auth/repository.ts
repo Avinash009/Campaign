@@ -19,3 +19,12 @@ export async function touchLastLogin(userId: string): Promise<void> {
     .update({ where: { id: userId }, data: { lastLoginAt: new Date() } })
     .catch(() => undefined)
 }
+
+/** Whether an account already exists for this email (case-insensitive). */
+export async function emailExists(email: string): Promise<boolean> {
+  const user = await prisma.user.findUnique({
+    where: { email: email.toLowerCase() },
+    select: { id: true },
+  })
+  return Boolean(user)
+}

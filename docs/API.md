@@ -32,7 +32,7 @@ Common codes: `validation_failed`, `unauthorized`, `forbidden`, `not_found`, `co
 
 ## 3. Endpoint catalog
 
-> Status column: ✅ implemented · 🔜 planned phase (P2…P6). Phase 1 implements only the auth route plumbing + health.
+> Status column: ✅ implemented · 🔜 planned phase (P2…P6). Phase 1 implements the auth route plumbing + health; Phase 2 adds registration, onboarding, business profile and team invitations.
 
 ### Auth & session
 
@@ -44,19 +44,19 @@ Common codes: `validation_failed`, `unauthorized`, `forbidden`, `not_found`, `co
 
 | Method | Path | Body / Response | Status |
 |---|---|---|---|
-| POST | `/api/auth/register` | `{ ownerName, email, password }` → `201 { userId }` | 🔜 |
-| POST | `/api/business/onboarding` | `{ businessName, businessEmail, phone, industrySlug, website?, city?, state?, description? }` → `201 { businessId }` | 🔜 |
-| POST | `/api/business/logo` | multipart image → `200 { logoUrl }` | 🔜 |
-| GET/PATCH | `/api/business/profile` | business profile read/update | 🔜 |
-| GET | `/api/business/team` | list members | 🔜 |
-| POST | `/api/business/team/invite` | `{ email, role }` → creates `INVITED` member + email (dev transport logs) | 🔜 |
-| POST | `/api/business/team/invite/accept` | `{ token }` → binds invitee user | 🔜 |
+| POST | `/api/auth/register` | `{ name, email, password }` → `201 { userId, welcomeEmailDelivered }` | ✅ P2 |
+| POST | `/api/business/onboarding` | `{ businessName, businessEmail, phone, industrySlug, website?, city?, state?, description?, logoUrl? }` → `201 { businessId, slug }` | ✅ P2 |
+| POST | `/api/business/logo` | multipart image (`file`) → `200 { logoUrl }` | ✅ P2 |
+| GET/PATCH | `/api/business/profile` | business profile read/update (PATCH: Owner/Admin) | ✅ P2 |
+| GET | `/api/business/team` | members + seats + plan name | ✅ P2 |
+| POST | `/api/business/team/invite` | `{ email, role: ADMIN\|MEMBER }` → `201 { invitationId, inviteUrl, emailDelivered, expiresAt }` (Owner/Admin; console transport reports `false`) | ✅ P2 |
+| POST | `/api/business/team/invite/accept` | `{ token }` → `200 { businessId, businessName, role }`; invitation email must match the session | ✅ P2 |
 
 ### Industries (P2)
 
 | Method | Path | Description | Status |
 |---|---|---|---|
-| GET | `/api/industries` | active industries (public) | 🔜 |
+| GET | `/api/industries` | active industries (public) | ✅ P2 |
 
 ### Campaigns (P3)
 
@@ -103,8 +103,8 @@ Common codes: `validation_failed`, `unauthorized`, `forbidden`, `not_found`, `co
 
 | Method | Path | Description | Status |
 |---|---|---|---|
-| GET | `/api/notifications` | my notifications | 🔜 |
-| POST | `/api/notifications/:id/read` | mark read | 🔜 |
+| GET | `/api/notifications` | my notifications | 🔜 P4 (notification service exists: team + onboarding events) |
+| POST | `/api/notifications/:id/read` | mark read | 🔜 P4 |
 
 ### Platform admin (P6)
 

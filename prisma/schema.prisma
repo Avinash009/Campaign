@@ -251,6 +251,7 @@ model BusinessMember {
   invitationToken String?      @unique
   invitedById     String?
   invitedAt       DateTime?
+  invitationExpiresAt DateTime?
   joinedAt        DateTime?
   createdAt       DateTime     @default(now())
   updatedAt       DateTime     @updatedAt

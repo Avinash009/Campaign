@@ -47,8 +47,8 @@ const BUSINESS_NAV: NavItem[] = [
   { href: "/dashboard/campaigns", label: "Campaigns", icon: Megaphone, available: false },
   { href: "/dashboard/leads", label: "Leads", icon: Users, available: false },
   { href: "/dashboard/analytics", label: "Analytics", icon: BarChart3, available: false },
-  { href: "/dashboard/team", label: "Team", icon: UserCog, available: false },
-  { href: "/dashboard/settings", label: "Settings", icon: Settings, available: false },
+  { href: "/dashboard/team", label: "Team", icon: UserCog, available: true },
+  { href: "/dashboard/settings", label: "Settings", icon: Settings, available: true },
 ]
 
 const ADMIN_NAV: NavItem[] = [

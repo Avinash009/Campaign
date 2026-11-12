@@ -79,8 +79,15 @@ Pipeline: install → lint → typecheck → unit → integration (with Postgres
   `slug.test.ts`, `rate-limit.test.ts`, `errors.test.ts`, `env.test.ts`,
   `format.test.ts`, `subscriptions/service.test.ts`, `email/index.test.ts`,
   `storage/index.test.ts`
+- ✅ Phase 2 unit tests — 72 tests across 12 files (adds `auth/rbac.test.ts`,
+  `business/schemas.test.ts`, `dashboard/service.test.ts`). Covers role
+  capabilities, onboarding/profile/invite validation (including empty-string
+  transforms and ownership not being invitable) and dashboard period parsing.
 - ✅ Manual e2e against the live database (2026-11-11): health endpoint, DB-backed
   home/pricing, owner & admin credential login, RBAC redirects, anonymous
-  redirects
-- 🔜 API integration harness: Phase 2 (with registration endpoints)
+  redirects; register → onboarding → business/membership/trial created;
+  invite → accept → MEMBER 403s on management endpoints.
+- 🔜 API integration harness (`tests/api/**`): still pending; the Phase 2 flows
+  were verified with live HTTP calls against the dev server. A dedicated
+  `campaignhub_test` database and fixtures remain the next testing investment.
 - 🔜 Playwright: Phase 8

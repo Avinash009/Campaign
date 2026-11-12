@@ -1,49 +1,38 @@
 import type { Metadata } from "next"
-import Link from "next/link"
-import { Rocket } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
+import { RegisterForm } from "@/components/auth/register-form"
 
 export const metadata: Metadata = {
   title: "Create your account",
   description: "Register your business on CampaignHub and start your first campaign.",
 }
 
-/**
- * Placeholder — business registration ships with the accounts milestone
- * (Phase 2: registration, login, onboarding). The route exists now so
- * navigation never dead-ends.
- */
-export default function RegisterPage() {
+/** Owner registration (Phase 2 task 2.1). Business details follow in onboarding. */
+export default async function RegisterPage({ searchParams }: PageProps<"/register">) {
+  const params = await searchParams
+  const callbackUrl =
+    typeof params.callbackUrl === "string" && params.callbackUrl.startsWith("/")
+      ? params.callbackUrl
+      : undefined
+
   return (
-    <div className="mx-auto flex max-w-md flex-col justify-center px-4 py-24 sm:px-6">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <Rocket className="size-5 text-primary" aria-hidden /> Start free
-          </CardTitle>
-          <CardDescription>
-            Create your business account and launch your first campaign.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center gap-2">
-            <Badge variant="outline" className="text-muted-foreground">Coming soon</Badge>
-            <p className="text-sm text-muted-foreground">
-              Business registration arrives with the next milestone.
-            </p>
-          </div>
-          <div className="flex gap-3">
-            <Button variant="outline" asChild>
-              <Link href="/">Back to home</Link>
-            </Button>
-            <Button asChild>
-              <Link href="/pricing">View pricing</Link>
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+    <div className="mx-auto grid w-full max-w-5xl gap-10 px-4 py-16 sm:px-6 lg:grid-cols-2 lg:items-center lg:py-24">
+      <div className="hidden space-y-4 lg:block">
+        <p className="text-xs font-semibold uppercase tracking-wider text-primary">
+          Start free
+        </p>
+        <h1 className="text-3xl font-semibold tracking-tight text-balance">
+          Launch a campaign page in minutes — no ad spend required.
+        </h1>
+        <p className="max-w-md text-sm text-muted-foreground">
+          Create your account, add your business details, and publish a shareable
+          promotional page. Enquiries land in a simple lead pipeline. A 14-day trial
+          starts automatically; no payment details are needed.
+        </p>
+      </div>
+
+      <div className="mx-auto w-full max-w-md">
+        <RegisterForm callbackUrl={callbackUrl} />
+      </div>
     </div>
   )
 }

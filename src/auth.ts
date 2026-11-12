@@ -1,10 +1,21 @@
 import NextAuth from "next-auth"
 import Credentials from "next-auth/providers/credentials"
 import { authConfig } from "@/auth.config"
+import { prisma } from "@/lib/prisma"
+import { checkRateLimit } from "@/lib/rate-limit"
+import { getClientIp } from "@/lib/request"
 import { getUserWithMemberships, touchLastLogin } from "@/modules/auth/repository"
 import { verifyPassword } from "@/modules/auth/password"
 import { loginSchema } from "@/modules/auth/schemas"
 import { logger } from "@/lib/logger"
+
+const HOUR_MS = 60 * 60 * 1000
+/**
+ * Login attempts per IP per hour (docs/API.md §1). The credentials provider has
+ * no route handler of its own, so the limit lives here where every attempt
+ * passes through.
+ */
+const LOGIN_ATTEMPTS_PER_HOUR = 10
 
 /**
  * Auth.js instance. Credentials provider with scrypt password verification.
@@ -20,7 +31,18 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
       },
-      async authorize(credentials) {
+      async authorize(credentials, request) {
+        const ip = getClientIp(request)
+        const limit = await checkRateLimit({
+          key: `login:${ip}`,
+          limit: LOGIN_ATTEMPTS_PER_HOUR,
+          windowMs: HOUR_MS,
+        })
+        if (!limit.allowed) {
+          logger.warn("auth.login_rate_limited", { ip, retryAfterSeconds: limit.retryAfterSeconds })
+          return null
+        }
+
         const parsed = loginSchema.safeParse(credentials)
         if (!parsed.success) return null
 
@@ -46,4 +68,30 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       },
     }),
   ],
+  callbacks: {
+    ...authConfig.callbacks,
+    /**
+     * The shared config (used by the proxy) is database-free, so the refresh
+     * path lives here: after onboarding or accepting an invite the client calls
+     * `update()` and the active membership is re-read from the database.
+     */
+    async jwt({ token, user, trigger }) {
+      if (user) {
+        token.id = user.id
+        token.isPlatformAdmin = user.isPlatformAdmin ?? false
+        token.businessId = user.businessId ?? null
+      }
+
+      if (trigger === "update" && typeof token.id === "string") {
+        const membership = await prisma.businessMember.findFirst({
+          where: { userId: token.id, status: "ACTIVE" },
+          orderBy: { createdAt: "asc" },
+          select: { businessId: true, role: true },
+        })
+        token.businessId = membership?.businessId ?? null
+      }
+
+      return token
+    },
+  },
 })

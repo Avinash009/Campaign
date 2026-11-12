@@ -49,7 +49,7 @@ Catalog seeded with 8 rows: `real-estate`, `finance-loans`, `insurance`, `educat
 Tenant root. `slug` unique (for future public business pages). `ownerId` → User (creator). `industryId` nullable (onboarding may complete later; `SetNull` on industry deletion). `onboardingCompletedAt` drives onboarding UX. `status`: `ACTIVE` | `SUSPENDED` (platform admin action).
 
 ### BusinessMember
-Membership + RBAC. `role`: `OWNER` | `ADMIN` | `MEMBER`. `status`: `ACTIVE` | `INVITED` | `REVOKED`. Invitations: `invitationEmail` + unique `invitationToken`; `userId` null until the invitee registers. Unique `(businessId, userId)` prevents duplicate memberships.
+Membership + RBAC. `role`: `OWNER` | `ADMIN` | `MEMBER`. `status`: `ACTIVE` | `INVITED` | `REVOKED`. Invitations: `invitationEmail` + unique `invitationToken` + `invitationExpiresAt` (7-day TTL enforced in the service); `userId` null until the invitee registers. Unique `(businessId, userId)` prevents duplicate memberships. Invitations can never grant `OWNER`.
 
 ### SubscriptionPlan / Subscription
 Plans seeded: Starter ₹999, Growth ₹2,499, Scale ₹5,999 per month (amount in paise: 99900 / 249900 / 599900). `features` JSON for plan feature lists (marketing copy). `Subscription` is 1:1 with business (`businessId` unique). `status`: `TRIALING` | `ACTIVE` | `PAST_DUE` | `CANCELLED` | `EXPIRED`. No payment execution in MVP — state changes are administrative.
