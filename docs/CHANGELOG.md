@@ -4,6 +4,62 @@ All notable changes to CampaignHub are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/); versioning is
 [SemVer](https://semver.org/).
 
+## [0.3.0] — 2026-11-12 (Session 3: Campaign module)
+
+### Added
+
+- Campaign module (`src/modules/campaigns/`): Zod schemas (rupees → integer
+  paise, comma-separated interests, `YYYY-MM-DD` dates, age bounds), tenant-scoped
+  repository, lifecycle rules, and a service covering create/update, plan
+  limits, publish validation, images and the public read model.
+- Campaign APIs: `GET/POST /api/campaigns`, `GET/PATCH /api/campaigns/:id`,
+  `POST /api/campaigns/:id/status`, `POST /api/campaigns/:id/images`,
+  `DELETE /api/campaigns/:id/images/:imageId` and the rate-limited public
+  `GET /api/public/campaigns/:slug`.
+- Dashboard: campaign list (`/dashboard/campaigns`) with search, status filter
+  and pagination; four-section create/edit form; detail page with publish
+  checklist, lifecycle actions, public link and image manager (up to 8 images).
+- Public landing pages at `/c/[slug]` with seven industry variants
+  (real-estate, finance/loans, insurance, education/coaching, healthcare,
+  retail/e-commerce, travel/tourism) plus a default, all built on one shared
+  template. Owner preview lives at `/preview/campaigns/[id]` outside the
+  dashboard shell with a status banner.
+- Campaigns enabled in the dashboard navigation; dashboard home links owners and
+  admins to “Create your first campaign” when the recent list is empty.
+- Unit tests for campaign schemas, list-query parsing, lifecycle transitions and
+  publish blockers (31 new tests).
+
+### Decisions
+
+- No schema migration: `Campaign`, `CampaignImage` and `CampaignEvent` were
+  already modelled in Phase 1.
+- Creation collects text only; images and lifecycle controls live on the detail
+  page because images need a campaign id.
+- `PATCH` is genuinely partial — the service merges the patch over the current
+  form values before validating, so full-form and partial payloads both work.
+- Slugs are generated once from the name at creation and stay stable on rename
+  so shared public links never break.
+- Lifecycle: `DRAFT→ACTIVE|ARCHIVED`, `ACTIVE→PAUSED|COMPLETED|ARCHIVED`,
+  `PAUSED→ACTIVE|COMPLETED|ARCHIVED`, `COMPLETED→ARCHIVED`; `ARCHIVED` is
+  terminal and read-only. Only `ACTIVE` campaigns are publicly resolvable.
+- Publishing requires a headline, a description, at least one contact channel
+  and a non-past end date (`400 campaign_incomplete` with field details).
+- Non-archived campaigns count against the plan's `campaignLimit`
+  (`409 campaign_limit_reached`); archived campaigns free a slot.
+- Public pages are honest: contact actions are click-to-contact only
+  (`tel:`, `mailto:`, `wa.me`) and the page states that the online enquiry form
+  arrives with the leads milestone. No ad-platform publishing is implied.
+
+### Verified
+
+- `npm run lint` clean · `npm run typecheck` clean · `npm run test` 103/103
+  passing (15 files) · `npm run build` succeeds (38 routes).
+- Live against local PostgreSQL (29 checks): plan-limit rejection, draft
+  privacy, preview banner, publish/pause/resume/complete/archive, slug stability
+  on rename, incomplete-publish details, image upload/remove, tenant-scoped 404s
+  and MEMBER 403s. Test rows and uploads were removed; the demo plan was
+  restored to Starter.
+
 ## [0.2.0] — 2026-11-11 (Session 2: Business module)
 
 ### Added

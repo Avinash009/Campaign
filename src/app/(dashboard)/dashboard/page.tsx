@@ -13,6 +13,7 @@ import {
   parseDashboardPeriod,
 } from "@/modules/dashboard/service"
 import { requireBusinessContext } from "@/modules/auth/session"
+import { canWriteCampaigns } from "@/modules/auth/rbac"
 import { formatDate } from "@/lib/format"
 import { cn } from "@/lib/utils"
 import {
@@ -33,6 +34,7 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
   const context = await requireBusinessContext()
   const params = await searchParams
   const period = parseDashboardPeriod(params.period)
+  const canManageCampaigns = canWriteCampaigns(context.role)
 
   const [summary, recentCampaigns, recentLeads] = await Promise.all([
     getDashboardSummary(context.businessId, period),
@@ -103,7 +105,13 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
               <EmptyState
                 icon={Megaphone}
                 title="No campaigns in this period"
-                description="Campaign creation arrives with the campaigns milestone. Try a wider date range once you have campaigns."
+                description="Create a campaign to publish a shareable promotional page for your product or offer. Try a wider date range if you already have campaigns."
+                action={
+                  canManageCampaigns
+                    ? { href: "/dashboard/campaigns/new", label: "Create your first campaign" }
+                    : undefined
+                }
+                hint={canManageCampaigns ? undefined : "Ask an owner or admin to create a campaign."}
               />
             ) : (
               <ul className="divide-y divide-border">
@@ -174,9 +182,9 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
         </CardHeader>
         <CardContent>
           <ul className="list-inside list-disc space-y-1 text-sm text-muted-foreground">
-            <li>Campaign creation with industry landing pages</li>
             <li>Lead pipeline with follow-ups and CSV export</li>
             <li>Analytics charts for views, visitors and conversion</li>
+            <li>Honest ad-platform integrations once a provider is configured</li>
           </ul>
         </CardContent>
       </Card>

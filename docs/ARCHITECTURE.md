@@ -67,7 +67,7 @@ prisma/schema.prisma  database schema + migrations + seed
 | `auth` | credentials login, password hashing (scrypt), session claims, RBAC helpers | `password.ts`, `repository.ts`, `schemas.ts` |
 | `businesses` | registration, onboarding, profile, member invites, membership checks | Phase 2 |
 | `industries` | industry catalog (seeded; admin-managed) | Phase 2/6 |
-| `campaigns` | campaign CRUD, slugs, publish/pause/archive, images | Phase 3 |
+| `campaigns` | campaign CRUD, slugs, publish/pause/archive, images, public landing read model | `schemas.ts`, `lifecycle.ts`, `service.ts` |
 | `leads` | enquiry intake (public), dedupe, list/search/filter, status updates, assignment, notes, follow-ups, CSV | Phase 4 |
 | `analytics` | event tracking (page views/unique visitors), conversion metrics, dashboards | Phase 5 |
 | `notifications` | in-app notification records | Phase 2+ |

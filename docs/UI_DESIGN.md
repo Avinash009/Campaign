@@ -69,6 +69,10 @@ Conventions:
 - **Dashboard home:** 6 stat cards (2–3 per row, responsive) → charts row → recent activity lists. Phase 2/5.
 - **List pages (campaigns/leads):** toolbar (search, filters, primary action) → table → pagination.
 - **Detail pages:** header (title, status badge, actions) → info cards grid → timeline/activity column.
+- **Campaign landing (`/c/[slug]`):** standalone page (no dashboard chrome) → business bar (logo/name/location + call) → industry-tinted hero (eyebrow chip, headline, promo copy, price, primary CTA + WhatsApp + email) → cover image → gallery → details/offer sections → industry disclaimer → click-to-contact sidebar → footer. Contact is always click-to-contact (`tel:`, `mailto:`, `wa.me`); the page states that the online enquiry form arrives with the leads milestone.
+- **Campaign preview (`/preview/campaigns/[id]`):** same renderer with a status banner ("Preview only — this page is draft/paused/…"); `noindex`. Deliberately outside the dashboard group so it renders without the app shell.
+- **Campaign image manager:** responsive 2/3-column thumbnail grid, remove button per image, "Add images" picker with slot counter (max 8, JPG/PNG/WebP ≤5 MB).
+- **Landing variants:** one shared layout with data-driven accents, eyebrow labels and disclaimers — real estate (emerald, project highlights), finance & loans (blue, indicative rates note), insurance (cyan, policy wording note), education & coaching (violet, fees/batch note), healthcare (rose, emergency/no-OTP note), retail & e-commerce (amber, stock/price note), travel & tourism (teal, itinerary note) and a neutral default for unknown industries. Adding an industry row does not require a new component.
 
 ## 7. States
 

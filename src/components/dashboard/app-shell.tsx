@@ -44,7 +44,7 @@ interface NavItem {
 
 const BUSINESS_NAV: NavItem[] = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, available: true },
-  { href: "/dashboard/campaigns", label: "Campaigns", icon: Megaphone, available: false },
+  { href: "/dashboard/campaigns", label: "Campaigns", icon: Megaphone, available: true },
   { href: "/dashboard/leads", label: "Leads", icon: Users, available: false },
   { href: "/dashboard/analytics", label: "Analytics", icon: BarChart3, available: false },
   { href: "/dashboard/team", label: "Team", icon: UserCog, available: true },

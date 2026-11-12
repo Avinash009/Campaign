@@ -60,14 +60,16 @@ Phases follow the workflow agreed with the owner: one focus area per development
 
 | # | Task | Status |
 |---|---|---|
-| 3.1 | Campaign CRUD APIs + validation | ☐ |
-| 3.2 | Campaign creation form (sections: basic/promo/targeting/CTA) | ☐ |
-| 3.3 | Image upload (multi, validated) | ☐ |
-| 3.4 | Campaign list page (filters, search, pagination) | ☐ |
-| 3.5 | Campaign detail + edit | ☐ |
-| 3.6 | Publish/pause/complete/archive lifecycle | ☐ |
-| 3.7 | Industry landing templates (shared design system; real-estate, finance, education, healthcare, retail variants) | ☐ |
-| 3.8 | Public campaign URL `/c/[slug]` + preview | ☐ |
+| 3.1 | Campaign CRUD APIs + validation | ✅ |
+| 3.2 | Campaign creation form (sections: basic/promo/targeting/CTA) | ✅ |
+| 3.3 | Image upload (multi, validated) | ✅ |
+| 3.4 | Campaign list page (filters, search, pagination) | ✅ |
+| 3.5 | Campaign detail + edit | ✅ |
+| 3.6 | Publish/pause/complete/archive lifecycle | ✅ |
+| 3.7 | Industry landing templates (shared design system; real-estate, finance, insurance, education, healthcare, retail, travel variants) | ✅ |
+| 3.8 | Public campaign URL `/c/[slug]` + owner preview (`/preview/campaigns/[id]`, outside the dashboard shell) | ✅ |
+
+**Phase 3 verification (2026-11-12):** no Prisma migration needed (`Campaign`, `CampaignImage`, `CampaignEvent` already existed) · `npm run lint` clean · `npm run typecheck` clean · `npm run test` 103/103 passing (15 files) · `npm run build` succeeds (38 routes incl. `/c/[slug]`, `/preview/campaigns/[id]`, 6 campaign API routes) · live flow: Starter plan returns `409 campaign_limit_reached` → Growth creates a DRAFT (price stored as paise, interests parsed, dates at UTC midnight) → draft public page/API 404 → owner preview shows the draft banner → publish makes `/c/[slug]` public → rename keeps the slug → pause/completed take the page offline → archive makes the campaign read-only and cannot be reopened → incomplete publish returns `400 campaign_incomplete` with field details → image upload/remove works → unknown ids 404 (tenant-scoped) → MEMBER gets 403 on create/status/images and cannot open the new-campaign page, but can view the list. Verification rows and uploaded files were removed and the demo plan restored to Starter.
 
 ## Phase 4 — Lead module (Session 4)
 

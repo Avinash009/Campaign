@@ -55,10 +55,10 @@ Membership + RBAC. `role`: `OWNER` | `ADMIN` | `MEMBER`. `status`: `ACTIVE` | `I
 Plans seeded: Starter ₹999, Growth ₹2,499, Scale ₹5,999 per month (amount in paise: 99900 / 249900 / 599900). `features` JSON for plan feature lists (marketing copy). `Subscription` is 1:1 with business (`businessId` unique). `status`: `TRIALING` | `ACTIVE` | `PAST_DUE` | `CANCELLED` | `EXPIRED`. No payment execution in MVP — state changes are administrative.
 
 ### Campaign
-Tenant-owned via `businessId`. Public URL slug unique (`/c/{slug}`). Two content groups: promotional (`headline`, `promoDescription`, `productDetails`, `offerDetails`, `price` paise + `priceDisplay` free text for ranges like "₹85 Lakhs onwards", `videoUrl`, `ctaType`, contact fields) and targeting (`targetLocation`, `targetAudience`, `ageRangeMin/Max`, `interests`). Lifecycle: `status` `DRAFT`→`ACTIVE`→`PAUSED`/`COMPLETED`→`ARCHIVED`; `publishedAt`/`completedAt` audit milestones. `createdById` records the author.
+Tenant-owned via `businessId`. Public URL slug unique (`/c/{slug}`); the slug is generated once from the name at creation and stays stable on rename so shared links keep working. Two content groups: promotional (`headline`, `promoDescription`, `productDetails`, `offerDetails`, `price` paise + `priceDisplay` free text for ranges like "₹85 Lakhs onwards", `videoUrl`, `ctaType`, contact fields) and targeting (`targetLocation`, `targetAudience`, `ageRangeMin/Max`, `interests`). Lifecycle: `status` `DRAFT`→`ACTIVE`→`PAUSED`/`COMPLETED`→`ARCHIVED`; `publishedAt`/`completedAt` audit milestones. Publishing requires a headline, description, one contact channel and a non-past end date. `ARCHIVED` is terminal and read-only. Only `ACTIVE` campaigns of `ACTIVE` businesses resolve publicly. Creation is limited by the plan's `campaignLimit` (non-archived rows only; Starter 1, Growth 5, Scale unlimited). `createdById` records the author.
 
 ### CampaignImage
-Ordered images per campaign (`sortOrder`); `url` from storage adapter (local `/uploads/...` or GCS).
+Ordered images per campaign (`sortOrder`); `url` from storage adapter (local `/uploads/...` or GCS). Maximum 8 images per campaign; uploads are validated (JPG/PNG/WebP ≤5 MB) before anything is written, and the first image becomes the landing-page cover. Stored under `businesses/{businessId}/campaigns/{campaignId}/`.
 
 ### CampaignEvent
 Append-only analytics events. `type`: `PAGE_VIEW` | `FORM_SUBMIT`. `visitorId` = anonymous UUID cookie set on first campaign-page visit — powers unique-visitor counts (`COUNT(DISTINCT visitorId)`). UTM columns captured from the landing URL; `referrer`, `userAgent`, `ipAddress` for abuse analysis (never shown to businesses). No unique constraint: dedupe of "unique visitors" happens at query time by `visitorId`; client also sends at most one event per visitor per day per campaign (cookie guard, Phase 5).
@@ -106,7 +106,7 @@ All tables carry `createdAt`; mutable rows carry `updatedAt`. Deletes cascade fr
 
 - Every business-owned row (`BusinessMember`, `Campaign`, `CampaignImage`, `Lead`, `LeadActivity`, `Notification`, `Subscription`, `AuditLog`) carries `businessId`.
 - All tenant queries flow through repositories that receive `businessId` from the authenticated session — see `docs/ARCHITECTURE.md` §4.
-- Public pages (`/c/[slug]`) look up campaigns by **slug only** and render only published data; no tenant context is exposed.
+- Public pages (`/c/[slug]`) look up campaigns by **slug only** and render only published data (`ACTIVE` campaign + `ACTIVE` business); no tenant context is exposed. Owner previews at `/preview/campaigns/[id]` are authenticated and tenant-scoped.
 
 ## 6. Migrations & seed
 

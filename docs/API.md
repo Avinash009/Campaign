@@ -60,23 +60,27 @@ Common codes: `validation_failed`, `unauthorized`, `forbidden`, `not_found`, `co
 
 ### Campaigns (P3)
 
+All campaign endpoints require a business session; tenant-owned reads/writes are
+scoped by the session `businessId`. `PATCH` bodies may be partial. The owner
+preview page is a server page at `/preview/campaigns/:id` (not an API route).
+
 | Method | Path | Body / Response | Status |
 |---|---|---|---|
-| GET | `/api/campaigns?page&status&search` | paginated campaigns for session business | 🔜 |
-| POST | `/api/campaigns` | full campaign payload (basic + promo + targeting + CTA) → `201 { id, slug }` | 🔜 |
-| GET | `/api/campaigns/:id` | campaign detail (images included) | 🔜 |
-| PATCH | `/api/campaigns/:id` | partial update | 🔜 |
-| POST | `/api/campaigns/:id/status` | `{ status }` — publish/pause/complete/archive with lifecycle validation | 🔜 |
-| POST | `/api/campaigns/:id/images` | multipart images[] → validated, stored via storage adapter | 🔜 |
-| DELETE | `/api/campaigns/:id/images/:imageId` | remove image | 🔜 |
+| GET | `/api/campaigns?page&pageSize&status&search` | paginated campaigns for session business → `200 { data: { items, total, page, pageSize, totalPages } }` | ✅ P3 |
+| POST | `/api/campaigns` | full campaign payload (basic + promo + targeting + CTA) → `201 { id, slug }`; Owner/Admin; `409 campaign_limit_reached` when the plan is full | ✅ P3 |
+| GET | `/api/campaigns/:id` | campaign detail (images included) | ✅ P3 |
+| PATCH | `/api/campaigns/:id` | partial update merged over current values; `409 campaign_archived` for archived campaigns | ✅ P3 |
+| POST | `/api/campaigns/:id/status` | `{ status }` — publish/pause/resume/complete/archive with lifecycle validation → `200 { id, status, publicUrl }`; `400 campaign_incomplete`, `409 invalid_status_transition` | ✅ P3 |
+| POST | `/api/campaigns/:id/images` | multipart `images[]` (JPG/PNG/WebP ≤5 MB, max 8 per campaign) → `201 { data: [...] }`; 60/hour/business | ✅ P3 |
+| DELETE | `/api/campaigns/:id/images/:imageId` | remove image row + stored file → `200 { ok: true }` | ✅ P3 |
 
 ### Public campaign & enquiries (P3/P4)
 
 | Method | Path | Description | Status |
 |---|---|---|---|
-| GET | `/api/public/campaigns/:slug` | published campaign data for landing page (no tenant info beyond public fields) | 🔜 |
-| POST | `/api/public/campaigns/:slug/events` | `{ type: "page_view", visitorId, utm… }` — rate-limited beacon | 🔜 |
-| POST | `/api/public/campaigns/:slug/enquiry` | `{ name, phone, email?, city?, message?, consent: true, visitorId?, utm… }` → `201 { reference }`; dedupes same phone+campaign in 24h | 🔜 |
+| GET | `/api/public/campaigns/:slug` | published campaign data for the landing page (ACTIVE campaign + ACTIVE business only) → `200 { data }` or 404; 120/hour/IP | ✅ P3 |
+| POST | `/api/public/campaigns/:slug/events` | `{ type: "page_view", visitorId, utm… }` — rate-limited beacon | 🔜 P5 |
+| POST | `/api/public/campaigns/:slug/enquiry` | `{ name, phone, email?, city?, message?, consent: true, visitorId?, utm… }` → `201 { reference }`; dedupes same phone+campaign in 24h | 🔜 P4 |
 
 ### Leads (P4)
 
