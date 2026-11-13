@@ -1,6 +1,6 @@
 # CampaignHub — Testing Strategy
 
-**Version:** 0.1.0 · **Updated:** 2026-11-11
+**Version:** 0.1.0 · **Updated:** 2026-11-13
 
 ## 1. Principles
 
@@ -83,6 +83,17 @@ Pipeline: install → lint → typecheck → unit → integration (with Postgres
   `business/schemas.test.ts`, `dashboard/service.test.ts`). Covers role
   capabilities, onboarding/profile/invite validation (including empty-string
   transforms and ownership not being invitable) and dashboard period parsing.
+- ✅ Phase 3 unit tests — 105 tests across 15 files (adds
+  `campaigns/schemas.test.ts`, `campaigns/lifecycle.test.ts`,
+  `campaigns/service.test.ts`). Covers rupees → paise, date/age validation,
+  slug collision handling, lifecycle transitions, publish blockers and list
+  query parsing.
+- ✅ Phase 4 unit tests — 146 tests across 17 files (adds
+  `leads/helpers.test.ts`, `leads/schemas.test.ts`). Covers phone
+  normalisation, status timestamp rules, IST follow-up parsing and day
+  boundaries, CSV escaping/BOM, enquiry/list/action schemas and filter
+  serialisation; `format.test.ts` now also covers `formatPhone`,
+  `phoneTelHref` and `phoneWhatsAppHref`.
 - ✅ Manual e2e against the live database (2026-11-11): health endpoint, DB-backed
   home/pricing, owner & admin credential login, RBAC redirects, anonymous
   redirects; register → onboarding → business/membership/trial created;

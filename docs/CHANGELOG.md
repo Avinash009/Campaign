@@ -4,6 +4,78 @@ All notable changes to CampaignHub are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/); versioning is
 [SemVer](https://semver.org/).
 
+## [0.4.0] — 2026-11-13 (Session 4: Lead module)
+
+### Added
+
+- Lead module (`src/modules/leads/`): pure helpers (phone normalisation,
+  status timestamp rules, IST follow-up parsing, CSV escaping/building), Zod
+  schemas for enquiries, list filters and dashboard actions, a tenant-scoped
+  repository and a service covering intake, list/detail reads, status,
+  assignment, notes, follow-ups and export.
+- Public enquiry form on every campaign landing page with a required consent
+  checkbox, an inline privacy notice, a hidden honeypot, UTM/referrer capture,
+  a success state with a short reference and a clear duplicate state. The owner
+  preview renders the same form disabled so no test leads are created.
+- `POST /api/public/campaigns/:slug/enquiry`: 5/hour/IP, Zod validation,
+  honeypot rejection (`400 invalid_submission`) and a soft 24-hour duplicate
+  check (same phone + campaign) that returns the original reference with
+  `duplicate: true`.
+- Lead APIs: `GET /api/leads` (filters + pagination), `GET /api/leads/:id`,
+  `PATCH /api/leads/:id/status`, `PATCH /api/leads/:id/assign`,
+  `POST /api/leads/:id/notes`, `POST /api/leads/:id/follow-up`,
+  `POST /api/leads/:id/follow-up/complete` and `GET /api/leads/export`.
+- Dashboard lead inbox (`/dashboard/leads`) with search, status/campaign/
+  assignee/date filters, pagination and a filtered CSV export link.
+- Lead detail (`/dashboard/leads/[id]`): click-to-call, WhatsApp and email
+  actions, enquiry details, activity timeline, status and assignment controls,
+  notes, follow-up scheduling/completion, campaign link, consent record, UTM
+  fields and a summary card.
+- Leads enabled in the dashboard navigation; dashboard recent enquiries link to
+  the lead detail; campaign lead counts link to the filtered lead list.
+- Unit tests for lead helpers, schemas, filter parsing and phone formatting
+  (41 new tests).
+
+### Decisions
+
+- Phones are stored as digits with the country code (`919845123456`); the
+  duplicate check also matches older/seed rows stored as `+91…`.
+- Status changes are permissive (`NEW→LOST→NEW` is allowed) and keep exactly one
+  outcome timestamp: `CONVERTED` sets `convertedAt`, `LOST` sets `lostAt`,
+  `CONTACTED` sets `lastContactedAt`, and reversing an outcome clears it.
+  `lastContactedAt` remains as history after the status moves on.
+- Follow-up dates accept a date-only input (`YYYY-MM-DD`), stored as 09:00 IST,
+  or a full ISO timestamp; only today or a future IST date is accepted.
+- MEMBER access is enforced in the service: members list and edit only leads
+  assigned to them, and an unassigned lead is a `404` rather than a `403` so its
+  existence is not revealed. Only owners/admins can assign.
+- New enquiries notify all active owners/admins (`LEAD_CREATED`); assignment
+  notifies the assignee (`LEAD_ASSIGNED`). Status, assignment and export actions
+  are audit-logged.
+- CSV export lives at `/api/leads/export`, reuses the list filters, is capped at
+  5,000 rows (`400 export_too_large`), guards against spreadsheet formula
+  injection, and writes a UTF-8 BOM with CRLF line endings and ISO/UTC dates.
+- Public enquiries do not write a `CampaignEvent`: `FORM_SUBMIT` needs a real
+  visitor id, which arrives with Phase 5 page-view tracking. Analytics can count
+  leads instead.
+- There is no `/privacy` page yet, so the fixed privacy notice is shown inline
+  on the enquiry form. CampaignHub never calls or messages the customer.
+
+### Verified
+
+- `npm run lint` clean · `npm run typecheck` clean · `npm run test` 146/146
+  passing (17 files) · `npm run build` succeeds (48 routes, 11 new).
+- Live against local PostgreSQL and the browser: valid enquiry `201` (normalised
+  phone, consent text, UTM and `CREATED` activity stored), duplicate `200` with
+  the same reference, honeypot `400 invalid_submission`, missing consent and
+  malformed phone `400 validation_failed`, sixth request in the hour `429` with
+  `Retry-After`; owner list/filter/CSV export, status transitions with timestamp
+  side effects, notes, 09:00 IST follow-up + completion and assignment; member
+  sees only assigned leads, `404` on an unassigned lead, `403` on assignment and
+  can still update their own lead; preview form disabled; dashboard and campaign
+  links resolve. Test leads, activities, notifications, audit rows and rate-limit
+  rows were removed; the demo business is back to 6 leads on Starter.
+
 ## [0.3.0] — 2026-11-12 (Session 3: Campaign module)
 
 ### Added

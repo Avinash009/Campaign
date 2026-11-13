@@ -47,7 +47,7 @@ Rules: no gradients as decoration (flat surfaces + borders); indigo is the only 
 | `/c/[slug]` | standalone landing page, no app chrome | Phase 3 templates |
 
 - **Sidebar:** logo, primary nav (Dashboard, Campaigns, Leads, Analytics, Team, Settings) with Lucide icons; business name + plan badge in header block; collapsible to `Sheet` under `lg` breakpoint; active item = indigo-50 bg + indigo-700 text.
-- **Topbar:** page context, search (Phase 4), notification bell (Phase 2+), user dropdown (name, email, sign out).
+- **Topbar:** page context, notification bell (Phase 2+), user dropdown (name, email, sign out).
 - **Marketing header:** logo, nav links (Features, Industries, Pricing, About, Contact), "Login" ghost + "Start Free" primary buttons.
 
 ## 5. Components (shadcn/ui, Radix)
@@ -68,8 +68,10 @@ Conventions:
 - **Auth:** centered card, logo, title, form, footer link (login ↔ register). Phase 2.
 - **Dashboard home:** 6 stat cards (2–3 per row, responsive) → charts row → recent activity lists. Phase 2/5.
 - **List pages (campaigns/leads):** toolbar (search, filters, primary action) → table → pagination.
+- **Lead inbox (`/dashboard/leads`):** search plus status/campaign/assignee/date filters mirrored in the URL, a filtered CSV export button, and a table showing contact + city/interest, campaign + source, status badge, assignee, next follow-up (overdue in red) and received date.
+- **Lead detail (`/dashboard/leads/[id]`):** header with reference, source, campaign and assignee, and click-to-contact actions (call, WhatsApp, email) → enquiry details → notes + activity timeline; side column with status, follow-up, assignment (owners/admins), summary and consent/UTM card. Members see read-only controls for leads that are not theirs.
 - **Detail pages:** header (title, status badge, actions) → info cards grid → timeline/activity column.
-- **Campaign landing (`/c/[slug]`):** standalone page (no dashboard chrome) → business bar (logo/name/location + call) → industry-tinted hero (eyebrow chip, headline, promo copy, price, primary CTA + WhatsApp + email) → cover image → gallery → details/offer sections → industry disclaimer → click-to-contact sidebar → footer. Contact is always click-to-contact (`tel:`, `mailto:`, `wa.me`); the page states that the online enquiry form arrives with the leads milestone.
+- **Campaign landing (`/c/[slug]`):** standalone page (no dashboard chrome) → business bar (logo/name/location + call) → industry-tinted hero (eyebrow chip, headline, promo copy, price, enquiry CTA + WhatsApp + email) → cover image → gallery → details/offer sections → enquiry form with consent + privacy notice → industry disclaimer → click-to-contact sidebar → footer. Contact is always click-to-contact (`tel:`, `mailto:`, `wa.me`); CampaignHub never calls or messages the visitor. The enquiry form is disabled on the owner preview page so no test leads are created.
 - **Campaign preview (`/preview/campaigns/[id]`):** same renderer with a status banner ("Preview only — this page is draft/paused/…"); `noindex`. Deliberately outside the dashboard group so it renders without the app shell.
 - **Campaign image manager:** responsive 2/3-column thumbnail grid, remove button per image, "Add images" picker with slot counter (max 8, JPG/PNG/WebP ≤5 MB).
 - **Landing variants:** one shared layout with data-driven accents, eyebrow labels and disclaimers — real estate (emerald, project highlights), finance & loans (blue, indicative rates note), insurance (cyan, policy wording note), education & coaching (violet, fees/batch note), healthcare (rose, emergency/no-OTP note), retail & e-commerce (amber, stock/price note), travel & tourism (teal, itinerary note) and a neutral default for unknown industries. Adding an industry row does not require a new component.

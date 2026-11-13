@@ -348,10 +348,13 @@ export default async function CampaignDetailPage({
                 <DetailRow
                   label="Leads"
                   value={
-                    <span className="inline-flex items-center gap-1.5">
-                      <Users className="size-3.5 text-muted-foreground" aria-hidden />
+                    <Link
+                      href={`/dashboard/leads?campaignId=${campaign.id}`}
+                      className="inline-flex items-center gap-1.5 text-primary underline underline-offset-4"
+                    >
+                      <Users className="size-3.5" aria-hidden />
                       {campaign.leadCount}
-                    </span>
+                    </Link>
                   }
                 />
               </dl>
@@ -375,8 +378,15 @@ export default async function CampaignDetailPage({
               </code>
               {campaign.leadCount === 0 && (
                 <p className="mt-3 text-xs text-muted-foreground">
-                  The online enquiry form and lead inbox arrive with the leads milestone.
-                  Visitors currently contact you with the call, WhatsApp and email buttons.
+                  Visitors use the enquiry form on the public page, or reach you directly with
+                  the call, WhatsApp and email buttons. New enquiries appear under{" "}
+                  <Link
+                    href="/dashboard/leads"
+                    className="font-medium text-foreground underline underline-offset-4"
+                  >
+                    Leads
+                  </Link>
+                  .
                 </p>
               )}
             </CardContent>

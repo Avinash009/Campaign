@@ -8,6 +8,7 @@ import {
   MapPin,
   MessageCircle,
   Phone,
+  Send,
   ShieldCheck,
   Sparkles,
   Users,
@@ -18,6 +19,7 @@ import { formatDate } from "@/lib/format"
 import { CTA_ACTION_LABELS } from "@/modules/campaigns/labels"
 import { CAMPAIGN_STATUS_LABELS } from "@/modules/campaigns/lifecycle"
 import type { PublicCampaign } from "@/modules/campaigns/types"
+import { CampaignEnquiryForm } from "./campaign-enquiry-form"
 import { getLandingTemplate } from "./templates"
 
 /**
@@ -183,10 +185,16 @@ export function CampaignLanding({ campaign, previewStatus }: CampaignLandingProp
               </div>
 
               <div className="flex flex-wrap gap-2 pt-1">
+                <a
+                  href="#enquiry"
+                  className="inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 hover:bg-slate-100"
+                >
+                  <Send className="size-4" aria-hidden /> Send an enquiry
+                </a>
                 {phone && (
                   <a
                     href={telHref(phone)}
-                    className="inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 hover:bg-slate-100"
+                    className="inline-flex items-center gap-2 rounded-lg border border-white/30 px-4 py-2.5 text-sm font-semibold text-white hover:bg-white/10"
                   >
                     <Phone className="size-4" aria-hidden /> {primaryLabel}
                   </a>
@@ -314,19 +322,23 @@ export function CampaignLanding({ campaign, previewStatus }: CampaignLandingProp
                 </a>
               )}
 
-              <section className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-5">
-                <h2 className="text-base font-semibold tracking-tight text-slate-900">
-                  Enquiries
+              <section
+                id="enquiry"
+                className="scroll-mt-6 rounded-xl border border-slate-200 bg-slate-50 p-5 sm:p-6"
+              >
+                <h2 className="text-lg font-semibold tracking-tight text-slate-900">
+                  Send an enquiry
                 </h2>
                 <p className="mt-1.5 text-sm leading-relaxed text-slate-600">
-                  The online enquiry form arrives with the next milestone. For now, use the
-                  call, WhatsApp or email buttons to reach{" "}
-                  {campaign.contactName?.trim() || campaign.business.name} directly.
+                  Share your details and{" "}
+                  {campaign.contactName?.trim() || campaign.business.name} will contact you
+                  directly. CampaignHub stores the enquiry on the business&apos;s behalf.
                 </p>
-                <p className="mt-3 text-xs leading-relaxed text-slate-500">
-                  We never ask for bank passwords, OTPs, PAN or Aadhaar numbers on this page.
-                  Share only what you are comfortable discussing over a call or message.
-                </p>
+                <CampaignEnquiryForm
+                  campaignSlug={campaign.slug}
+                  businessName={campaign.business.name}
+                  disabled={Boolean(previewStatus)}
+                />
               </section>
             </div>
 

@@ -75,12 +75,14 @@ Phases follow the workflow agreed with the owner: one focus area per development
 
 | # | Task | Status |
 |---|---|---|
-| 4.1 | Public enquiry form (consent + privacy notice) + intake API (rate-limited, validated, deduped) | ☐ |
-| 4.2 | Lead list page (search/filters/pagination) | ☐ |
-| 4.3 | Lead detail: timeline, notes, follow-ups | ☐ |
-| 4.4 | Status updates + assignment | ☐ |
-| 4.5 | Quick actions (tel/mailto/wa.me links) | ☐ |
-| 4.6 | CSV export | ☐ |
+| 4.1 | Public enquiry form (consent + privacy notice) + intake API (rate-limited, validated, deduped) | ✅ |
+| 4.2 | Lead list page (search/filters/pagination) | ✅ |
+| 4.3 | Lead detail: timeline, notes, follow-ups | ✅ |
+| 4.4 | Status updates + assignment | ✅ |
+| 4.5 | Quick actions (tel/mailto/wa.me links) | ✅ |
+| 4.6 | CSV export | ✅ |
+
+**Phase 4 verification (2026-11-13):** no Prisma migration needed (`Lead`, `LeadActivity` already existed) · `npm run lint` clean · `npm run typecheck` clean · `npm run test` 146/146 passing (17 files) · `npm run build` succeeds (48 routes, 11 new incl. `/dashboard/leads`, `/dashboard/leads/[id]`, 8 lead API routes and the public enquiry endpoint) · live flow: valid enquiry `201` (phone stored as `919876500001`, consent text + UTM captured, `CREATED` activity) → same phone within 24h `200 { duplicate: true }` with the original reference → filled honeypot `400 invalid_submission` (no row) → missing consent and malformed phone `400 validation_failed` → 6th request in the hour `429` with `Retry-After` → owner list/filters/search, CSV export (`text/csv`, BOM, `X-Lead-Count`), status `NEW→CONTACTED→CONVERTED→LOST→NEW` with correct outcome timestamps, notes, follow-up scheduled at 09:00 IST + marked complete, and assignment to the member → member sees only the 4 leads assigned to them, gets `404` for an unassigned lead and `403` on assignment, but can update their own lead → preview page renders the form disabled ("Preview only") → dashboard recent-lead links, campaign lead-count filter link and nav all resolve. Test leads, activities, notifications, audit rows and rate-limit rows were removed; the demo business is back to 6 leads on the Starter plan.
 
 ## Phase 5 — Analytics (Session 5)
 

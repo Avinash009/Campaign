@@ -14,7 +14,7 @@ import {
 } from "@/modules/dashboard/service"
 import { requireBusinessContext } from "@/modules/auth/session"
 import { canWriteCampaigns } from "@/modules/auth/rbac"
-import { formatDate } from "@/lib/format"
+import { formatDate, formatPhone } from "@/lib/format"
 import { cn } from "@/lib/utils"
 import {
   BadgeCheck,
@@ -150,10 +150,15 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
                 {recentLeads.map((lead) => (
                   <li key={lead.id} className="flex items-center justify-between gap-3 py-3 first:pt-0 last:pb-0">
                     <div className="min-w-0 space-y-0.5">
-                      <p className="truncate text-sm font-medium">
+                      <Link
+                        href={`/dashboard/leads/${lead.id}`}
+                        className="block truncate text-sm font-medium hover:underline"
+                      >
                         {lead.name}
-                        <span className="ml-2 font-normal text-muted-foreground">{lead.phone}</span>
-                      </p>
+                        <span className="ml-2 font-normal text-muted-foreground">
+                          {formatPhone(lead.phone)}
+                        </span>
+                      </Link>
                       <p className="truncate text-xs text-muted-foreground">
                         {[
                           lead.campaign?.name ?? "Direct",
@@ -182,7 +187,6 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
         </CardHeader>
         <CardContent>
           <ul className="list-inside list-disc space-y-1 text-sm text-muted-foreground">
-            <li>Lead pipeline with follow-ups and CSV export</li>
             <li>Analytics charts for views, visitors and conversion</li>
             <li>Honest ad-platform integrations once a provider is configured</li>
           </ul>

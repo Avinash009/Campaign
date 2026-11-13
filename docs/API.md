@@ -80,19 +80,24 @@ preview page is a server page at `/preview/campaigns/:id` (not an API route).
 |---|---|---|---|
 | GET | `/api/public/campaigns/:slug` | published campaign data for the landing page (ACTIVE campaign + ACTIVE business only) → `200 { data }` or 404; 120/hour/IP | ✅ P3 |
 | POST | `/api/public/campaigns/:slug/events` | `{ type: "page_view", visitorId, utm… }` — rate-limited beacon | 🔜 P5 |
-| POST | `/api/public/campaigns/:slug/enquiry` | `{ name, phone, email?, city?, message?, consent: true, visitorId?, utm… }` → `201 { reference }`; dedupes same phone+campaign in 24h | 🔜 P4 |
+| POST | `/api/public/campaigns/:slug/enquiry` | `{ name, phone, email?, city?, interestedIn?, message?, consent: true, website?, utm…, referrer? }` → `201 { data: { reference, duplicate: false } }`; same phone + campaign within 24h → `200 { data: { reference, duplicate: true } }`; `400 invalid_submission` for the honeypot, `400 validation_failed`, `404` for unpublished campaigns; 5/hour/IP → `429` + `Retry-After` | ✅ P4 |
 
 ### Leads (P4)
 
+All lead endpoints require a business session and are scoped to the session
+`businessId`. Members see and edit only leads assigned to them; owners/admins
+see the whole inbox. The list filters are shared by the CSV export.
+
 | Method | Path | Description | Status |
 |---|---|---|---|
-| GET | `/api/leads?status&campaignId&assignedTo&from&to&search&page` | filtered list (role-scoped) | 🔜 |
-| GET | `/api/leads/:id` | detail incl. activities | 🔜 |
-| PATCH | `/api/leads/:id/status` | `{ status, note? }` → records activity | 🔜 |
-| PATCH | `/api/leads/:id/assign` | `{ userId }` (Owner/Admin) | 🔜 |
-| POST | `/api/leads/:id/notes` | `{ note }` → activity | 🔜 |
-| POST | `/api/leads/:id/follow-up` | `{ scheduledFor }` → activity | 🔜 |
-| GET | `/api/leads/export.csv?filters…` | CSV export (same filters as list) | 🔜 |
+| GET | `/api/leads?status&campaignId&assignedTo&from&to&search&page&pageSize` | filtered list → `200 { data, pagination }`; `assignedTo` accepts `me`, `unassigned` or a teammate id (ignored for members) | ✅ P4 |
+| GET | `/api/leads/:id` | detail incl. activity timeline → `200 { data }`; `404` when missing or assigned to another member | ✅ P4 |
+| PATCH | `/api/leads/:id/status` | `{ status, note? }` → records `STATUS_CHANGED`, updates outcome timestamps | ✅ P4 |
+| PATCH | `/api/leads/:id/assign` | `{ userId \| null }` (Owner/Admin) → records `ASSIGNED`, notifies the assignee | ✅ P4 |
+| POST | `/api/leads/:id/notes` | `{ note }` → `201`, records `NOTE_ADDED` | ✅ P4 |
+| POST | `/api/leads/:id/follow-up` | `{ scheduledFor, note? }` (`YYYY-MM-DD` → 09:00 IST, or ISO; today/future only) → `201`, records `FOLLOW_UP_SCHEDULED` | ✅ P4 |
+| POST | `/api/leads/:id/follow-up/complete` | `{ note? }` → clears `nextFollowUpAt`, sets `lastContactedAt`, records `FOLLOW_UP_COMPLETED`; `409 no_follow_up` | ✅ P4 |
+| GET | `/api/leads/export?filters…` | CSV with the same filters as the list → `text/csv` (UTF-8 BOM, CRLF, ISO/UTC dates); max 5,000 rows → `400 export_too_large`; audit-logged | ✅ P4 |
 
 ### Analytics (P5)
 
