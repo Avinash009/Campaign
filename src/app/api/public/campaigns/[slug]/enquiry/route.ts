@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { ApiError, routeHandler } from "@/lib/errors"
 import { checkRateLimit } from "@/lib/rate-limit"
 import { getClientIp } from "@/lib/request"
+import { VISITOR_COOKIE, isValidVisitorId, readCookieValue } from "@/lib/visitor"
 import { submitEnquiry } from "@/modules/leads/service"
 
 type RouteContext = { params: Promise<{ slug: string }> }
@@ -45,7 +46,13 @@ export const POST = routeHandler<RouteContext>(async (request, { params }) => {
   }
 
   const { slug } = await params
-  const result = await submitEnquiry(slug, body, { ipAddress: ip })
+  const visitorCookie = readCookieValue(request.headers.get("cookie"), VISITOR_COOKIE)
+  const visitorId = visitorCookie && isValidVisitorId(visitorCookie) ? visitorCookie : null
+  const result = await submitEnquiry(slug, body, {
+    ipAddress: ip,
+    userAgent: request.headers.get("user-agent"),
+    visitorId,
+  })
 
   return NextResponse.json(
     { data: result },

@@ -79,7 +79,7 @@ preview page is a server page at `/preview/campaigns/:id` (not an API route).
 | Method | Path | Description | Status |
 |---|---|---|---|
 | GET | `/api/public/campaigns/:slug` | published campaign data for the landing page (ACTIVE campaign + ACTIVE business only) → `200 { data }` or 404; 120/hour/IP | ✅ P3 |
-| POST | `/api/public/campaigns/:slug/events` | `{ type: "page_view", visitorId, utm… }` — rate-limited beacon | 🔜 P5 |
+| POST | `/api/public/campaigns/:slug/events` | `{ type: "page_view", visitorId, referrer?, utm… }` → `202 { data: { recorded: true } }`; only `PAGE_VIEW` is accepted from browsers, only ACTIVE campaigns of ACTIVE businesses (otherwise `404`), 120/hour/IP → `429`; the visitor id must be 8–64 `[A-Za-z0-9_-]` characters | ✅ P5 |
 | POST | `/api/public/campaigns/:slug/enquiry` | `{ name, phone, email?, city?, interestedIn?, message?, consent: true, website?, utm…, referrer? }` → `201 { data: { reference, duplicate: false } }`; same phone + campaign within 24h → `200 { data: { reference, duplicate: true } }`; `400 invalid_submission` for the honeypot, `400 validation_failed`, `404` for unpublished campaigns; 5/hour/IP → `429` + `Retry-After` | ✅ P4 |
 
 ### Leads (P4)
@@ -101,12 +101,19 @@ see the whole inbox. The list filters are shared by the CSV export.
 
 ### Analytics (P5)
 
+All analytics endpoints require an active business membership (any role) and are
+scoped to the session `businessId` through the campaign/lead relations. Query
+params: `period=7d|30d|90d|all` (default `30d`) and optional `campaignId`.
+Presets are whole IST calendar days; `all` aggregates by month. Responses use the
+usual `{ data, meta }` envelope. `FORM_SUBMIT` events are written server-side
+with the enquiry (a browser cannot post them).
+
 | Method | Path | Description | Status |
 |---|---|---|---|
-| GET | `/api/analytics/summary?from&to&campaignId` | dashboard summary cards | 🔜 |
-| GET | `/api/analytics/leads-over-time?…` | daily lead counts | 🔜 |
-| GET | `/api/analytics/campaign-performance?…` | per-campaign views/visitors/leads/conversion | 🔜 |
-| GET | `/api/analytics/leads-by-location?…` | city breakdown | 🔜 |
+| GET | `/api/analytics/summary?period&campaignId` | page views, unique visitors, enquiries, conversion rate (`null` with no tracked views), qualified and converted leads | ✅ P5 |
+| GET | `/api/analytics/leads-over-time?period&campaignId` | dense buckets with page views, unique visitors and lead counts (daily for presets, monthly for all time) | ✅ P5 |
+| GET | `/api/analytics/campaign-performance?period&campaignId` | per-campaign views/visitors/leads/conversion, sorted by leads | ✅ P5 |
+| GET | `/api/analytics/leads-by-location?period&campaignId` | enquiry counts and share by city (`Not shared` when absent) | ✅ P5 |
 
 ### Notifications (P2+)
 

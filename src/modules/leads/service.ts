@@ -1,5 +1,6 @@
 import { ApiError } from "@/lib/errors"
 import { logger } from "@/lib/logger"
+import { recordFormSubmitEvent } from "@/modules/analytics/service"
 import { recordAudit } from "@/modules/audit/service"
 import { canAssignLeads, canEditLead, isManager } from "@/modules/auth/rbac"
 import type { BusinessContext } from "@/modules/auth/session"
@@ -57,6 +58,8 @@ import type {
 
 interface EnquiryMeta {
   ipAddress?: string
+  visitorId?: string | null
+  userAgent?: string | null
 }
 
 type LeadListRecord = Awaited<ReturnType<typeof listLeads>>["rows"][number]
@@ -236,8 +239,28 @@ export async function submitEnquiry(
     utmCampaign: data.utmCampaign ?? null,
     utmTerm: data.utmTerm ?? null,
     utmContent: data.utmContent ?? null,
+    visitorId: meta.visitorId ?? null,
     referrer: data.referrer ?? null,
     ipAddress: meta.ipAddress ?? null,
+  })
+
+  await recordFormSubmitEvent({
+    campaignId: campaign.id,
+    visitorId: meta.visitorId,
+    referrer: data.referrer,
+    ipAddress: meta.ipAddress,
+    userAgent: meta.userAgent,
+    utmSource: data.utmSource,
+    utmMedium: data.utmMedium,
+    utmCampaign: data.utmCampaign,
+    utmTerm: data.utmTerm,
+    utmContent: data.utmContent,
+  }).catch((error) => {
+    logger.warn("analytics.form_submit_failed", {
+      leadId: created.id,
+      campaignId: campaign.id,
+      error: error instanceof Error ? error.message : String(error),
+    })
   })
 
   await notifyManagers(campaign.businessId, {

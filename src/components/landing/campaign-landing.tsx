@@ -20,6 +20,7 @@ import { CTA_ACTION_LABELS } from "@/modules/campaigns/labels"
 import { CAMPAIGN_STATUS_LABELS } from "@/modules/campaigns/lifecycle"
 import type { PublicCampaign } from "@/modules/campaigns/types"
 import { CampaignEnquiryForm } from "./campaign-enquiry-form"
+import { CampaignViewTracker } from "./campaign-view-tracker"
 import { getLandingTemplate } from "./templates"
 
 /**
@@ -101,6 +102,8 @@ export function CampaignLanding({ campaign, previewStatus }: CampaignLandingProp
 
   return (
     <div className="min-h-screen bg-white text-slate-900">
+      {!previewStatus && <CampaignViewTracker campaignSlug={campaign.slug} />}
+
       {previewStatus && (
         <div className="border-b border-amber-300 bg-amber-50 px-4 py-2 text-center text-sm text-amber-900">
           Preview only — this page is {CAMPAIGN_STATUS_LABELS[previewStatus].toLowerCase()}
@@ -403,12 +406,19 @@ export function CampaignLanding({ campaign, previewStatus }: CampaignLandingProp
             © {new Date().getFullYear()} {campaign.business.name}
             {campaign.business.city ? ` · ${campaign.business.city}` : ""}
           </p>
-          <p className="text-xs">
-            Published with{" "}
-            <Link href="/" className="font-medium text-slate-800 underline underline-offset-4">
-              CampaignHub
-            </Link>
-          </p>
+          <div className="space-y-1 md:text-right">
+            <p className="text-xs">
+              Published with{" "}
+              <Link href="/" className="font-medium text-slate-800 underline underline-offset-4">
+                CampaignHub
+              </Link>
+            </p>
+            {!previewStatus && (
+              <p className="text-xs text-slate-500">
+                Visits are counted with a first-party cookie. No ad tracking.
+              </p>
+            )}
+          </div>
         </div>
       </footer>
     </div>

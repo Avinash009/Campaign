@@ -51,9 +51,18 @@ Integration tests use a dedicated database (e.g. `campaignhub_test`) via `DATABA
 
 ### Analytics (P5)
 
-- page-view beacon: creates CampaignEvent; visitor counted once per day (client guard) — unique visitor math `COUNT(DISTINCT visitorId)` verified
-- conversion rate = leads / unique visitors × 100 (rounded 1dp); zero visitors → 0, no division error
-- date-range filters inclusive of both ends (IST boundary documented)
+- period parsing falls back to 30 days; `7d`/`30d`/`90d` windows are whole IST
+  days and `all` uses monthly buckets (dense buckets, empty periods included)
+- conversion rate = leads / unique visitors × 100, one decimal; zero visitors →
+  `null` (no division error, UI shows `—`); leads without tracked views may push
+  the rate above 100% and that is intentional
+- aggregation: unique visitors are distinct per window/bucket; campaigns with no
+  activity still appear with zero; locations fold blank cities into `Not shared`;
+  status breakdown always returns the six statuses in pipeline order
+- visitor helpers: UUID/opaque ids of 8–64 safe characters; raw `Cookie` header
+  parsing including empty values and embedded `=`
+- page-view beacon schema: accepts only `PAGE_VIEW` (normalises `page_view`),
+  rejects `FORM_SUBMIT`, short/unsafe ids and over-long filters
 
 ### Analytics/dashboard math (pure unit)
 
@@ -94,6 +103,16 @@ Pipeline: install → lint → typecheck → unit → integration (with Postgres
   boundaries, CSV escaping/BOM, enquiry/list/action schemas and filter
   serialisation; `format.test.ts` now also covers `formatPhone`,
   `phoneTelHref` and `phoneWhatsAppHref`.
+- ✅ Phase 5 unit tests — 176 tests across 20 files (adds
+  `analytics/helpers.test.ts`, `analytics/schemas.test.ts`, `lib/visitor.test.ts`).
+  Covers IST periods and dense buckets, conversion math, summary/performance/
+  campaign/location/status aggregation, analytics query parsing/serialisation,
+  the page-view beacon schema and visitor cookie parsing.
+- ✅ Manual e2e against the live database (2026-11-13, analytics): public beacon
+  `202` writes `PAGE_VIEW` with UTM, DRAFT campaign `404`, invalid visitor `400`,
+  enquiry with `ch_visitor` stores `visitorId` and writes `FORM_SUBMIT`, a real
+  landing-page visit sets the cookie and beacons, owner preview writes nothing,
+  and the analytics page/API render 30-day, 7-day and campaign-filtered views.
 - ✅ Manual e2e against the live database (2026-11-11): health endpoint, DB-backed
   home/pricing, owner & admin credential login, RBAC redirects, anonymous
   redirects; register → onboarding → business/membership/trial created;

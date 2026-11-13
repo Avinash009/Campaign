@@ -4,6 +4,71 @@ All notable changes to CampaignHub are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/); versioning is
 [SemVer](https://semver.org/).
 
+## [0.5.0] — 2026-11-13 (Session 5: Analytics)
+
+### Added
+
+- Analytics module (`src/modules/analytics/`): pure helpers for IST period
+  windows, dense daily/monthly chart buckets, conversion math and aggregation, a
+  tenant-scoped repository and a service powering the overview, page-view
+  recording and server-side form-submit events.
+- First-party page-view tracking: `/c/[slug]` sets an anonymous `ch_visitor`
+  cookie (one year, `SameSite=Lax`) and sends one beacon per visit to
+  `POST /api/public/campaigns/:slug/events`. Do Not Track and Global Privacy
+  Control are respected, storage failures are ignored and analytics never blocks
+  the landing page. The owner preview never tracks.
+- `FORM_SUBMIT` events are written by the lead service after a successful
+  enquiry, using the visitor cookie, so a browser cannot fake conversions.
+  Failures are logged (`analytics.form_submit_failed`) but never fail the
+  enquiry.
+- Analytics dashboard (`/dashboard/analytics`): six summary cards (page views,
+  unique visitors, enquiries, conversion rate, qualified, converted), a
+  performance-over-time chart (views/visitors left axis, enquiries right axis),
+  campaign comparison and current-status charts, a per-campaign performance table
+  and a leads-by-location table, with empty states.
+- Period presets (`7d`, `30d`, `90d`, `all`) and a campaign filter mirrored in
+  the URL; dashboard home now shows leads-over-time, campaign comparison and
+  conversion-rate charts.
+- Analytics APIs: `GET /api/analytics/summary`, `leads-over-time`,
+  `campaign-performance` and `leads-by-location` (any active member; business
+  scoped).
+- Analytics enabled in the dashboard navigation.
+- Unit tests for analytics helpers, query/beacon schemas and visitor cookie
+  helpers (30 new tests).
+
+### Decisions
+
+- Periods are whole IST calendar days: `7d` = today + 6 previous days, `30d` =
+  today + 29, `90d` = today + 89. `all` uses monthly buckets; presets use daily
+  buckets with empty days included.
+- Conversion rate = `(enquiries ÷ unique visitors) × 100`, one decimal, and is
+  `null` (shown as `—`) when no page views were tracked. It is not capped at
+  100% because leads can exist without a tracked visit; the UI states this
+  honestly.
+- Events are append-only; unique visitors are counted per window with
+  `COUNT(DISTINCT visitorId)` computed in the service.
+- `CampaignEvent` has no `businessId`; analytics reads are isolated through the
+  campaign relation (`campaign.businessId`), which is the only tenant boundary
+  for events.
+- The beacon accepts only `PAGE_VIEW`; `FORM_SUBMIT` is server-only. A missing
+  or invalid visitor id is ignored rather than invented.
+- Analytics is business-wide for every active member, including MEMBER, matching
+  `docs/API.md`; it reveals aggregate numbers, not other members' lead details.
+
+### Verified
+
+- `npm run lint` clean · `npm run typecheck` clean · `npm run test` 176/176
+  passing (20 files) · `npm run build` succeeds (54 routes, 6 new).
+- Live against local PostgreSQL and the browser: beacon `202` created a
+  `PAGE_VIEW` with UTM source; DRAFT campaign `404`; bad visitor id
+  `400 validation_failed`; enquiry with `ch_visitor` stored `visitorId` and wrote
+  `FORM_SUBMIT`; a real landing-page visit set the cookie and beaconed while the
+  owner preview created nothing; analytics rendered 30-day, 7-day and
+  single-campaign views with charts and tables; unknown period fell back to 30
+  days; authenticated analytics APIs returned `200`, anonymous access was
+  blocked. Verification rows were removed and the demo business restored to 87
+  page views, 6 form submits and 6 leads.
+
 ## [0.4.0] — 2026-11-13 (Session 4: Lead module)
 
 ### Added

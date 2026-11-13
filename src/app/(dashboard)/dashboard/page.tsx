@@ -1,6 +1,11 @@
 import Link from "next/link"
 import { Megaphone, Users } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+  CampaignComparisonChart,
+  CampaignConversionChart,
+  PerformanceChart,
+} from "@/components/analytics/analytics-charts"
 import { EmptyState } from "@/components/shared/empty-state"
 import { CampaignStatusBadge, LeadStatusBadge } from "@/components/shared/status-badge"
 import { StatCard } from "@/components/shared/stat-card"
@@ -12,6 +17,7 @@ import {
   getRecentLeads,
   parseDashboardPeriod,
 } from "@/modules/dashboard/service"
+import { getAnalyticsOverview } from "@/modules/analytics/service"
 import { requireBusinessContext } from "@/modules/auth/session"
 import { canWriteCampaigns } from "@/modules/auth/rbac"
 import { formatDate, formatPhone } from "@/lib/format"
@@ -36,11 +42,15 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
   const period = parseDashboardPeriod(params.period)
   const canManageCampaigns = canWriteCampaigns(context.role)
 
-  const [summary, recentCampaigns, recentLeads] = await Promise.all([
+  const [summary, recentCampaigns, recentLeads, analytics] = await Promise.all([
     getDashboardSummary(context.businessId, period),
     getRecentCampaigns(context.businessId, { period }),
     getRecentLeads(context.businessId, { period }),
+    getAnalyticsOverview(context, { period }),
   ])
+
+  const hasAnalyticsActivity = analytics.hasPageViews || analytics.summary.enquiries > 0
+  const hasConversionData = analytics.campaigns.some((row) => row.conversionRate !== null)
 
   return (
     <div className="space-y-8">
@@ -89,6 +99,83 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
         <StatCard label="New leads" value={summary.newLeads} icon={Inbox} />
         <StatCard label="Qualified leads" value={summary.qualifiedLeads} icon={Target} />
         <StatCard label="Converted leads" value={summary.convertedLeads} icon={CheckCircle2} />
+      </div>
+
+      {/* Analytics charts */}
+      <div className="space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="space-y-0.5">
+            <h2 className="text-lg font-semibold tracking-tight">Performance</h2>
+            <p className="text-sm text-muted-foreground">
+              Landing-page activity from your own campaign pages · {PERIOD_LABELS[period]}.
+            </p>
+          </div>
+          <Link
+            href="/dashboard/analytics"
+            className="text-sm font-medium text-primary hover:underline"
+          >
+            View analytics
+          </Link>
+        </div>
+
+        {!hasAnalyticsActivity ? (
+          <Card size="sm">
+            <CardContent>
+              <EmptyState
+                icon={Megaphone}
+                title="No landing-page activity in this period"
+                description="Publish a campaign and share its link to start collecting page views and enquiries. Try a wider date range if your campaigns are already live."
+                action={{ href: "/dashboard/analytics", label: "Open analytics" }}
+              />
+            </CardContent>
+          </Card>
+        ) : (
+          <>
+            <Card size="sm">
+              <CardHeader>
+                <CardTitle>Leads over time</CardTitle>
+                <CardDescription>
+                  Page views, unique visitors and enquiries per{" "}
+                  {period === "all" ? "month" : "day"}. Enquiries use the right axis.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <PerformanceChart data={analytics.performance} />
+              </CardContent>
+            </Card>
+
+            <div className="grid gap-6 lg:grid-cols-2">
+              <Card size="sm">
+                <CardHeader>
+                  <CardTitle>Campaign comparison</CardTitle>
+                  <CardDescription>Enquiries received per campaign.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <CampaignComparisonChart data={analytics.campaigns} />
+                </CardContent>
+              </Card>
+
+              <Card size="sm">
+                <CardHeader>
+                  <CardTitle>Conversion rate</CardTitle>
+                  <CardDescription>
+                    Enquiries ÷ unique visitors, for campaigns with tracked visits.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {hasConversionData ? (
+                    <CampaignConversionChart data={analytics.campaigns} />
+                  ) : (
+                    <p className="py-10 text-center text-sm text-muted-foreground">
+                      Conversion appears once a published campaign gets tracked page views and
+                      enquiries.
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Recent activity */}
@@ -187,7 +274,7 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
         </CardHeader>
         <CardContent>
           <ul className="list-inside list-disc space-y-1 text-sm text-muted-foreground">
-            <li>Analytics charts for views, visitors and conversion</li>
+            <li>AI content assistance behind a provider configuration</li>
             <li>Honest ad-platform integrations once a provider is configured</li>
           </ul>
         </CardContent>

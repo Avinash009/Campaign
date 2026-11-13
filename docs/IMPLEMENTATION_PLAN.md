@@ -88,11 +88,13 @@ Phases follow the workflow agreed with the owner: one focus area per development
 
 | # | Task | Status |
 |---|---|---|
-| 5.1 | Page-view tracking (visitor cookie + beacon) | ☐ |
-| 5.2 | Analytics services (views, unique visitors, conversion rate) | ☐ |
-| 5.3 | Dashboard charts (Recharts): leads over time, campaign performance, conversion, comparison | ☐ |
-| 5.4 | Date-range + campaign filters | ☐ |
-| 5.5 | Leads-by-location table | ☐ |
+| 5.1 | Page-view tracking (visitor cookie + beacon) | ✅ |
+| 5.2 | Analytics services (views, unique visitors, conversion rate) | ✅ |
+| 5.3 | Dashboard charts (Recharts): leads over time, campaign performance, conversion, comparison | ✅ |
+| 5.4 | Date-range + campaign filters | ✅ |
+| 5.5 | Leads-by-location table | ✅ |
+
+**Phase 5 verification (2026-11-13):** no Prisma migration needed (`CampaignEvent` and `Lead.visitorId` already in the schema) · `npm run lint` clean · `npm run typecheck` clean · `npm run test` 176/176 passing (20 files) · `npm run build` succeeds (54 routes, 6 new: `/dashboard/analytics`, the four `/api/analytics/*` routes and the public events beacon) · live flow: beacon `202` creates one `PAGE_VIEW` with UTM source → a DRAFT campaign's page returns `404` and an invalid visitor id `400 validation_failed` → an enquiry carrying the `ch_visitor` cookie stores `visitorId` and writes the server-side `FORM_SUBMIT` event (a real browser visit set the cookie and beaconed; the owner preview created no event) → analytics page renders 30-day, 7-day and single-campaign views with charts, the campaign table and the location table; an unknown period falls back to 30 days → authenticated `/api/analytics/*` returns `200`; anonymous access is blocked · verification leads, events, notifications and audit rows were removed (demo business back to 87 page views, 6 form submits, 6 leads).
 
 ## Phase 6 — Platform administration
 
