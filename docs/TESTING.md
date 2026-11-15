@@ -1,6 +1,6 @@
 # CampaignHub — Testing Strategy
 
-**Version:** 0.1.0 · **Updated:** 2026-11-13
+**Version:** 0.1.0 · **Updated:** 2026-11-15
 
 ## 1. Principles
 
@@ -69,6 +69,26 @@ Integration tests use a dedicated database (e.g. `campaignhub_test`) via `DATABA
 - rate-limit window: allow N, deny N+1, retryAfter computed from oldest entry
 - money formatting: paise → `₹1,23,456` style display helper (`formatInr`, covered)
 
+### Platform admin (P6)
+
+- admin list query parsing: defaults (page 1, 10 rows), valid status/search,
+  repeated params take the first value, blank search dropped, unknown status or
+  oversized page size fall back to defaults
+- business status: only `ACTIVE`/`SUSPENDED` accepted; anything else is a
+  validation error
+- money: whole rupees → integer paise (`999` → `99900`); blank, negative and
+  non-numeric input rejected
+- feature lists: split on newlines/commas, trimmed, de-duplicated, capped at 12;
+  omitted field stays `undefined` on update
+- industry/plan create: slug may be blank (auto-generated server-side); unsafe
+  slugs, short names and invalid intervals rejected
+- plan update: transforms only fields supplied; blank limits mean unlimited
+- authorization: every `/api/admin/*` route returns `401` anonymous and `403`
+  for a business user; admin pages redirect non-admins to `/dashboard`
+- suspension: public campaign pages return `404` while the business is
+  `SUSPENDED` and `200` after reactivation; audit rows are written for both
+  transitions
+
 ## 4. Execution
 
 ```bash
@@ -108,6 +128,18 @@ Pipeline: install → lint → typecheck → unit → integration (with Postgres
   Covers IST periods and dense buckets, conversion math, summary/performance/
   campaign/location/status aggregation, analytics query parsing/serialisation,
   the page-view beacon schema and visitor cookie parsing.
+- ✅ Phase 6 unit tests — 193 tests across 21 files (adds
+  `admin/schemas.test.ts`, 17 tests). Covers admin list query parsing, the
+  business-status enum, rupee → paise conversion, feature-list splitting,
+  industry/plan create/update transforms and admin validation errors.
+- ✅ Manual e2e against the live database (2026-11-15, platform admin):
+  statistics/business/industry/plan/campaign APIs returned `200` with live
+  data; search and filters worked; suspend → public page `404` → reactivate
+  `200`; industry create/rename/deactivate; plan create/price change/deactivate
+  (₹1999 → `199900` paise, features split, inactive hidden from pricing);
+  invalid payloads `400`; owner `403` on all admin APIs and `/admin` →
+  `/dashboard`; anonymous admin access `401`; verification rows and audit
+  entries removed and demo counts restored.
 - ✅ Manual e2e against the live database (2026-11-13, analytics): public beacon
   `202` writes `PAGE_VIEW` with UTM, DRAFT campaign `404`, invalid visitor `400`,
   enquiry with `ch_visitor` stores `visitorId` and writes `FORM_SUBMIT`, a real

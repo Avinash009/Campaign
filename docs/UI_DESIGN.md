@@ -43,7 +43,7 @@ Rules: no gradients as decoration (flat surfaces + borders); indigo is the only 
 |---|---|---|
 | `(marketing)` | top nav (sticky, blur, white) + footer | `SiteHeader`, `SiteFooter` |
 | `(dashboard)` | fixed sidebar (desktop) + topbar + content | `DashboardSidebar`, `DashboardTopbar` |
-| `(admin)` | sidebar variant, indigo-tinted | Phase 6 |
+| `(admin)` | sidebar variant (indigo-tinted), platform nav only | `AppShell` with `Platform admin` label |
 | `/c/[slug]` | standalone landing page, no app chrome | Phase 3 templates |
 
 - **Sidebar:** logo, primary nav (Dashboard, Campaigns, Leads, Analytics, Team, Settings) with Lucide icons; business name + plan badge in header block; collapsible to `Sheet` under `lg` breakpoint; active item = indigo-50 bg + indigo-700 text.
@@ -69,6 +69,12 @@ Conventions:
 - **Dashboard home:** 6 stat cards (2–3 per row, responsive) → analytics charts (leads/visitors/enquiries over time, campaign comparison, conversion rate by campaign) → recent activity lists. Period presets default to all time. Phase 2/5.
 - **Analytics (`/dashboard/analytics`):** header → period presets + campaign select (mirrored in the URL) → window/honesty note → 6 stat cards (page views, unique visitors, enquiries, conversion, qualified, converted) → performance-over-time composed chart → campaign comparison + current-status charts → per-campaign performance table (views, visitors, enquiries, conversion) → leads-by-location table (city, enquiries, share). Empty state when the window has no activity; conversion shows `—` until visits are tracked.
 - **List pages (campaigns/leads):** toolbar (search, filters, primary action) → table → pagination.
+- **Platform overview (`/admin`):** header with shortcuts → 12 stat cards (businesses, users, campaigns, leads, page views, enquiries, subscriptions; suspended and 7-day counts as descriptions) → newest businesses list → platform-management card. Counts are live; the page states that nothing is estimated or forecast.
+- **Admin businesses (`/admin/businesses`):** search (business/owner/email) + status filter → table (business/owner, industry, plan + subscription status, campaign/lead counts, status badge, joined date) → suspend (confirmation dialog explaining public-page impact) or activate → pagination.
+- **Admin industries (`/admin/industries`):** count summary + link to the public page → table (icon, name, slug, usage counts, sort order, status) → create/edit dialog (name, slug, icon key, description, sort order, active switch) → activate/deactivate; inactive rows stay readable but disappear from public choices.
+- **Admin plans (`/admin/plans`):** link to public pricing → table (name/slug, price + interval, limits, subscribers, featured/active badges) → create/edit dialog (rupees price, interval, limits, feature text, featured/active, sort order) → activate/deactivate.
+- **Admin campaigns (`/admin/campaigns`):** search + status filter → read-only table (campaign, business with suspended badge, status, page views, enquiries, leads, created, public link only when campaign and business are active) → pagination.
+
 - **Lead inbox (`/dashboard/leads`):** search plus status/campaign/assignee/date filters mirrored in the URL, a filtered CSV export button, and a table showing contact + city/interest, campaign + source, status badge, assignee, next follow-up (overdue in red) and received date.
 - **Lead detail (`/dashboard/leads/[id]`):** header with reference, source, campaign and assignee, and click-to-contact actions (call, WhatsApp, email) → enquiry details → notes + activity timeline; side column with status, follow-up, assignment (owners/admins), summary and consent/UTM card. Members see read-only controls for leads that are not theirs.
 - **Detail pages:** header (title, status badge, actions) → info cards grid → timeline/activity column.

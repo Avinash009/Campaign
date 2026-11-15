@@ -4,6 +4,78 @@ All notable changes to CampaignHub are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/); versioning is
 [SemVer](https://semver.org/).
 
+## [0.6.0] — 2026-11-15 (Session 6: Platform administration)
+
+### Added
+
+- Platform-admin module (`src/modules/admin/`): Zod input/query schemas
+  (including rupee → paise and feature-text helpers), a deliberately
+  cross-tenant repository (`*Platform*` names), services for statistics,
+  business suspension, industry/plan management and campaign monitoring, and
+  read-model types.
+- Admin API routes (admin only): `GET /api/admin/statistics`,
+  `GET /api/admin/businesses`, `PATCH /api/admin/businesses/:id/status`,
+  `GET/POST /api/admin/industries`, `PATCH /api/admin/industries/:id`,
+  `GET/POST /api/admin/plans`, `PATCH /api/admin/plans/:id` and
+  `GET /api/admin/campaigns`.
+- Expanded platform overview (`/admin`): businesses/active/suspended, users and
+  pending invitations, campaigns/active, leads and new leads (7 days), tracked
+  page views, server-recorded enquiries, trial and active subscriptions, newest
+  businesses and management shortcuts.
+- Business directory (`/admin/businesses`): search by business/owner/email,
+  status filter, pagination, plan/subscription, counts, and suspend/reactivate
+  with a confirmation dialog. Suspension takes public campaign pages offline
+  immediately; data and team are retained.
+- Industry management (`/admin/industries`): list with usage counts, create,
+  edit, activate/deactivate and sort order; slugs auto-generate. Unknown icon
+  keys fall back to a generic icon, so new industries remain data-only.
+- Subscription plan management (`/admin/plans`): create/edit price (rupees in
+  the form, integer paise in the database), interval, campaign/member limits,
+  feature list, featured/active flags and sort order; deactivating hides a plan
+  from pricing and new subscriptions.
+- Campaign monitoring (`/admin/campaigns`): read-only cross-tenant list with
+  business, status, page views, enquiries, leads and a public-page link only
+  when both campaign and business are active.
+- `requireApiPlatformAdmin()` route-handler guard; admin navigation items are
+  now all enabled.
+- Audit rows for admin mutations (`admin.business_suspended`,
+  `admin.business_activated`, `admin.industry_created`,
+  `admin.industry_updated`, `admin.plan_created`, `admin.plan_updated`).
+- 17 unit tests for admin schemas (list query parsing, status enum, rupee →
+  paise, feature splitting, industry/plan create/update transforms).
+
+### Decisions
+
+- Admin operations are cross-tenant by design. Repository functions are named
+  `*Platform*` and are reachable only through `requirePlatformAdmin()` /
+  `requireApiPlatformAdmin()`, keeping the exception grep-able in review.
+- Defence in depth: the admin layout and every admin page re-check the flag;
+  each route handler checks it again.
+- Plan and industry forms send raw strings; the server re-validates and
+  performs transforms. `planFormSchema` is validation-only so react-hook-form
+  and the API share the same rules without pre-transforming values.
+- Plan prices are entered in whole rupees and stored as integer paise; feature
+  text is split on newlines/commas (max 12).
+- Campaign monitoring is read-only: campaign lifecycle changes stay with the
+  owning business.
+- Business suspension affects public pages only. Blocking dashboard access for
+  suspended tenants is intentionally out of Phase 6 scope.
+
+### Verified
+
+- `npm run lint` clean · `npm run typecheck` clean · `npm run test` 193/193
+  passing (21 files) · `npm run build` succeeds (62 routes, 4 admin pages + 8
+  admin APIs).
+- Live against local PostgreSQL and the browser: admin statistics/business/
+  industry/plan/campaign APIs returned `200` with live data; search and status
+  filters worked; suspension made `/c/luxury-apartments-hyderabad` return `404`
+  and reactivation restored `200`; industry and plan create/update/deactivate
+  worked (₹1999 → `199900` paise, features split, inactive hidden from public
+  pages); invalid payloads returned `400 validation_failed`; an owner received
+  `403` from all admin APIs and a `/admin` → `/dashboard` redirect; anonymous
+  admin access returned `401`. Verification rows and audit entries were
+  removed; demo counts restored to 87 page views, 6 enquiries and 6 leads.
+
 ## [0.5.0] — 2026-11-13 (Session 5: Analytics)
 
 ### Added

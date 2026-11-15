@@ -53,10 +53,10 @@ const BUSINESS_NAV: NavItem[] = [
 
 const ADMIN_NAV: NavItem[] = [
   { href: "/admin", label: "Platform overview", icon: Gauge, available: true },
-  { href: "/admin/businesses", label: "Businesses", icon: Building2, available: false },
-  { href: "/admin/industries", label: "Industries", icon: LayoutGrid, available: false },
-  { href: "/admin/plans", label: "Plans", icon: Tag, available: false },
-  { href: "/admin/campaigns", label: "Campaigns", icon: Megaphone, available: false },
+  { href: "/admin/businesses", label: "Businesses", icon: Building2, available: true },
+  { href: "/admin/industries", label: "Industries", icon: LayoutGrid, available: true },
+  { href: "/admin/plans", label: "Plans", icon: Tag, available: true },
+  { href: "/admin/campaigns", label: "Campaigns", icon: Megaphone, available: true },
 ]
 
 interface AppShellProps {

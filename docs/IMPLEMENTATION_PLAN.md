@@ -100,11 +100,36 @@ Phases follow the workflow agreed with the owner: one focus area per development
 
 | # | Task | Status |
 |---|---|---|
-| 6.1 | Admin: businesses list/suspend | ☐ |
-| 6.2 | Admin: industry management | ☐ |
-| 6.3 | Admin: plan management | ☐ |
-| 6.4 | Admin: campaign monitoring | ☐ |
-| 6.5 | Admin: platform statistics | ☐ |
+| 6.1 | Admin: businesses list/suspend | ✅ |
+| 6.2 | Admin: industry management | ✅ |
+| 6.3 | Admin: plan management | ✅ |
+| 6.4 | Admin: campaign monitoring | ✅ |
+| 6.5 | Admin: platform statistics | ✅ |
+
+**Phase 6 verification (2026-11-15):** `npm run lint` clean · `npm run typecheck`
+clean · `npm run test` 193/193 passing (21 files, 17 new admin schema tests) ·
+`npm run build` succeeds (62 routes; 4 admin pages + 8 admin API routes). Live
+against local PostgreSQL: `/admin` renders live cross-tenant totals (businesses,
+users, campaigns, leads, page views, enquiries, subscriptions); business
+directory search/status filters and pagination work; suspending the demo
+business returned the public page `404` and reactivation restored `200`
+(audit rows written); industry create → rename → deactivate and plan create →
+price change (₹1499 → ₹1999 stored as `199900` paise) → deactivate both worked,
+inactive rows disappeared from the public pricing/industry pages, and invalid
+payloads returned `400 validation_failed` with per-field details; a business
+owner got `403` from every `/api/admin/*` endpoint and `/admin` redirected to
+`/dashboard`; anonymous admin API access returned `401`. Verification rows and
+their audit entries were deleted; the demo business is back to 87 page views,
+6 enquiries and 6 leads.
+
+**Notes:** Enforcement is defence in depth — the admin layout and every admin
+page call `requirePlatformAdmin()`; every admin API route calls
+`requireApiPlatformAdmin()`. Admin mutations write audit rows
+(`admin.business_suspended`, `admin.business_activated`,
+`admin.industry_created`, `admin.industry_updated`, `admin.plan_created`,
+`admin.plan_updated`). Suspension takes public campaign pages offline; tenant
+dashboard access during suspension is deliberately unchanged (outside Phase 6
+scope).
 
 ## Phase 7 — AI integration
 

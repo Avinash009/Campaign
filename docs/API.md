@@ -124,13 +124,23 @@ with the enquiry (a browser cannot post them).
 
 ### Platform admin (P6)
 
+Every endpoint requires the platform-admin flag (`isPlatformAdmin`); business
+users receive `403` and anonymous callers `401`. These are the only cross-tenant
+reads/writes in the app and are guarded by `requireApiPlatformAdmin()`. List
+responses use `{ data, meta: { page, pageSize, total, totalPages } }`.
+
 | Method | Path | Description | Status |
 |---|---|---|---|
-| GET | `/api/admin/statistics` | platform totals | 🔜 |
-| GET | `/api/admin/businesses?page&search&status` | all businesses | 🔜 |
-| PATCH | `/api/admin/businesses/:id/status` | `{ status }` suspend/activate | 🔜 |
-| GET/PATCH | `/api/admin/industries` | industry catalog management | 🔜 |
-| GET/PATCH | `/api/admin/plans` | subscription plan management | 🔜 |
+| GET | `/api/admin/statistics` | platform totals: businesses (active/suspended), users + pending invitations, campaigns (active), leads + last 7 days, page views, enquiries, trial/active subscriptions | ✅ P6 |
+| GET | `/api/admin/businesses?page&pageSize&status&search` | paginated directory; search matches business name/slug/email and owner name/email; `status=ACTIVE\|SUSPENDED` | ✅ P6 |
+| PATCH | `/api/admin/businesses/:id/status` | `{ status: "ACTIVE" \| "SUSPENDED" }` → `200 { data: { id, status } }`; suspension takes public pages offline, audit-logged | ✅ P6 |
+| GET | `/api/admin/industries` | full catalog incl. inactive rows, usage counts and sort order | ✅ P6 |
+| POST | `/api/admin/industries` | `{ name, slug?, description?, iconKey?, sortOrder, isActive }` → `201 { data: { id, slug, name } }`; slug auto-generated, `409 slug_taken` | ✅ P6 |
+| PATCH | `/api/admin/industries/:id` | partial fields incl. `isActive`; deactivation hides the industry from onboarding/marketing pages | ✅ P6 |
+| GET | `/api/admin/plans` | full catalog incl. inactive plans, amounts in paise and subscriber counts | ✅ P6 |
+| POST | `/api/admin/plans` | `{ name, slug?, description?, amountRupees, interval: MONTHLY\|YEARLY, campaignLimit?, memberLimit?, featuresText?, isFeatured, isActive, sortOrder }` → `201 { data: { id, slug, name } }`; rupees converted to integer paise | ✅ P6 |
+| PATCH | `/api/admin/plans/:id` | partial fields incl. `amountRupees`, limits, `featuresText` and `isActive`; deactivation hides the plan from pricing | ✅ P6 |
+| GET | `/api/admin/campaigns?page&pageSize&status&search` | read-only cross-tenant monitor: business, status, page views, enquiries, leads; search matches campaign name/slug and business name/slug | ✅ P6 |
 
 ### Health
 

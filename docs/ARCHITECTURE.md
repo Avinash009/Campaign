@@ -70,8 +70,9 @@ prisma/schema.prisma  database schema + migrations + seed
 | `campaigns` | campaign CRUD, slugs, publish/pause/archive, images, public landing read model | `schemas.ts`, `lifecycle.ts`, `service.ts` |
 | `leads` | enquiry intake (public), dedupe, list/search/filter, status updates, assignment, notes, follow-ups, CSV | `schemas.ts`, `helpers.ts`, `repository.ts`, `service.ts` |
 | `analytics` | first-party event tracking (page views/unique visitors), conversion metrics, overview APIs and dashboards | `helpers.ts`, `schemas.ts`, `repository.ts`, `service.ts` |
+| `admin` | platform-admin only: statistics, business suspension, industry/plan catalogs, cross-tenant campaign monitoring | `schemas.ts`, `repository.ts`, `service.ts`, `types.ts` |
 | `notifications` | in-app notification records | Phase 2+ |
-| `subscriptions` | plans, business subscription state (no payment execution in MVP) | Phase 6 |
+| `subscriptions` | plan reads, business subscription state (plan catalog is managed by `admin`; no payment execution in MVP) | Phase 2/P6 |
 | `audit` | append-only `AuditLog` writes for significant operations | Phase 1 (interface) |
 | `storage` | file upload abstraction: local adapter (dev) / GCS adapter (prod) | `storage/index.ts` |
 | `email` | email sending abstraction: console transport (dev), provider later | `email/index.ts` |
@@ -83,7 +84,8 @@ prisma/schema.prisma  database schema + migrations + seed
 - Tenant context is resolved **per request** from the Auth.js JWT (user id + membership) — never from a URL or client-supplied value.
 - Repositories receive `businessId` as a parameter; services obtain it from `requireBusinessContext()` (auth module) which verifies an active membership.
 - `CampaignEvent` has no tenant column; analytics queries scope it through `campaign.businessId`. The public beacon resolves an ACTIVE campaign of an ACTIVE business before writing anything.
-- Platform-admin operations use dedicated admin services that deliberately omit the tenant filter; they are named `*Platform*` to make cross-tenant access grep-able and auditable.
+- Platform-admin operations use dedicated admin services that deliberately omit the tenant filter; they are named `*Platform*` to make cross-tenant access grep-able and auditable. The admin layout and every admin page call `requirePlatformAdmin()`; each `/api/admin/*` route calls `requireApiPlatformAdmin()`.
+- Business suspension (`Business.status = SUSPENDED`) takes public campaign pages offline; tenant dashboard access during suspension is unchanged (out of Phase 6 scope).
 - Future isolation upgrade path (if an enterprise tier demands it): row-level security or schema-per-tenant — the schema already scopes everything by `businessId` so either is additive.
 
 ## 5. Rendering strategy

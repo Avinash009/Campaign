@@ -94,3 +94,15 @@ export async function requireApiBusinessContext(): Promise<BusinessContext> {
   }
   return context
 }
+
+/**
+ * Requires the platform-admin flag in a route handler. This is a cross-tenant
+ * guard: only use it for `/api/admin/*` routes, never for tenant endpoints.
+ */
+export async function requireApiPlatformAdmin() {
+  const session = await requireApiUser()
+  if (!session.user.isPlatformAdmin) {
+    throw ApiError.forbidden("Platform administrator access is required.")
+  }
+  return session
+}
