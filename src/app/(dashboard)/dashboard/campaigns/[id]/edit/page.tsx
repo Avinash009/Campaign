@@ -6,6 +6,7 @@ import { CampaignForm } from "@/components/campaigns/campaign-form"
 import { requireBusinessContext } from "@/modules/auth/session"
 import { ApiError } from "@/lib/errors"
 import { canWriteCampaigns } from "@/modules/auth/rbac"
+import { getAiStatus } from "@/modules/ai/service"
 import {
   getCampaignFormContext,
   getCampaignFormValues,
@@ -66,6 +67,7 @@ export default async function EditCampaignPage({
         campaignLimit={formContext.campaignLimit}
         campaignsUsed={formContext.campaignsUsed}
         planName={formContext.planName}
+        aiConfigured={getAiStatus().configured}
       />
     </div>
   )

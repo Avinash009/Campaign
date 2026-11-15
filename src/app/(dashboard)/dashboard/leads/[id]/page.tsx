@@ -25,8 +25,10 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { LeadAssignForm } from "@/components/leads/lead-assign-form"
+import { LeadFollowUpCard } from "@/components/leads/lead-follow-up-card"
 import { LeadFollowUpForm } from "@/components/leads/lead-follow-up-form"
 import { LeadNoteForm } from "@/components/leads/lead-note-form"
+import { LeadQualificationCard } from "@/components/leads/lead-qualification-card"
 import { LeadStatusForm } from "@/components/leads/lead-status-form"
 import { LeadStatusBadge } from "@/components/shared/status-badge"
 import { ApiError } from "@/lib/errors"
@@ -46,6 +48,7 @@ import {
   LEAD_STATUS_LABELS,
 } from "@/modules/leads/labels"
 import { getLeadDetail, getLeadFilterOptions } from "@/modules/leads/service"
+import { getLeadFollowUp, getLeadQualification } from "@/modules/ai/service"
 import { isFollowUpOverdue } from "@/modules/leads/helpers"
 import type { LeadActivityDto, LeadDetail } from "@/modules/leads/types"
 
@@ -148,6 +151,10 @@ export default async function LeadDetailPage({ params }: PageProps<"/dashboard/l
   }
 
   const options = await getLeadFilterOptions(context)
+  const [qualification, followUp] = await Promise.all([
+    getLeadQualification(context, lead.id),
+    getLeadFollowUp(context, lead.id),
+  ])
   const isAssignee = lead.assignedTo?.id === context.userId
   const canEdit = canEditLead(context.role, isAssignee)
   const canAssign = canAssignLeads(context.role)
@@ -279,6 +286,15 @@ export default async function LeadDetailPage({ params }: PageProps<"/dashboard/l
               </div>
             </CardContent>
           </Card>
+
+          <LeadQualificationCard result={qualification} />
+
+          <LeadFollowUpCard
+            result={followUp}
+            phone={lead.phone}
+            email={lead.email}
+            nextFollowUpAt={lead.nextFollowUpAt}
+          />
 
           <Card>
             <CardHeader>

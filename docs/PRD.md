@@ -17,7 +17,7 @@ Core promise:
 4. Track performance with real analytics.
 5. (Later) Improve campaigns with AI assistance.
 
-**Honest scope note:** In the MVP, campaigns generate shareable promotional pages. The platform does **not** automatically publish to Google Ads or Meta Ads; ad-platform integrations are a future phase. AI features are designed for but not implemented until Phase 7.
+**Honest scope note:** In the MVP, campaigns generate shareable promotional pages. The platform does **not** automatically publish to Google Ads or Meta Ads; ad-platform integrations are a future phase. AI features (Module 9) are implemented in Phase 7 with two honest layers: provider-backed copy generation that fails explicitly when no provider is configured, and deterministic rule-based review, qualification and follow-up drafts that never pretend to predict or send anything.
 
 ## 2. User roles
 
@@ -96,7 +96,7 @@ Detailed page: customer details, campaign info, source, status, assignee, activi
 
 Metrics: page views, unique visitors, enquiries, leads by campaign/location, conversion rate, performance over time. `Conversion Rate = (Total Leads / Unique Visitors) × 100`. Date-range filters, charts + tables. Landing-page activity is clearly distinguished from advertising impressions/spend (not tracked in MVP).
 
-### Module 9 — AI features (future-ready, not implemented yet)
+### Module 9 — AI features
 
 1. Ad content generator (headlines, descriptions, CTA suggestions).
 2. Landing page content generator.
@@ -104,7 +104,16 @@ Metrics: page views, unique visitors, enquiries, leads by campaign/location, con
 4. Lead qualification (interest categorization, transparent rule-based prioritization, follow-up questions).
 5. Follow-up assistant (personalized messages, next actions).
 
-All behind service interfaces in `src/modules/ai/`. No fake AI. Phase 7.
+**Implemented in Phase 7 as two honest layers.** Ad copy and landing-page copy
+use a configured OpenAI-compatible provider (`AI_PROVIDER`, `AI_API_KEY`,
+`AI_MODEL`, `AI_BASE_URL`); the adapter is explicit that nothing is generated
+when the provider is missing (`503 ai_not_configured`) and prompts forbid
+invented statistics, awards or guarantees. Campaign review, lead qualification
+and follow-up drafts are deterministic rule-based functions over the business's
+own campaign and lead data: every score point is listed, the UI labels them
+"Rule-based", no outcome is predicted, and drafted messages are copied or opened
+in the user's own phone/WhatsApp/email app — CampaignHub never sends them. All
+features sit behind interfaces in `src/modules/ai/`; there is no fake AI.
 
 ## 5. Non-functional requirements
 

@@ -1,6 +1,6 @@
 # CampaignHub — Architecture
 
-**Version:** 0.1.0 · **Updated:** 2026-11-11
+**Version:** 0.1.0 · **Updated:** 2026-11-15
 
 ## 1. High-level architecture
 
@@ -29,7 +29,7 @@ flowchart LR
             SUBS[subscriptions]
             NOTIF[notifications]
             AUD[audit]
-            AI[ai interfaces]
+            AI[ai services]
             STOR[storage adapter]
             MAIL[email adapter]
         end
@@ -42,7 +42,7 @@ flowchart LR
     Modules --> DB
     STOR --> FS
     MAIL -->|dev: logs only| N[console/log]
-    AI -.->|Phase 7| LLM[LLM provider]
+    AI -.->|content generation only| LLM[configured LLM endpoint]
 ```
 
 ## 2. Layering rules
@@ -76,7 +76,7 @@ prisma/schema.prisma  database schema + migrations + seed
 | `audit` | append-only `AuditLog` writes for significant operations | Phase 1 (interface) |
 | `storage` | file upload abstraction: local adapter (dev) / GCS adapter (prod) | `storage/index.ts` |
 | `email` | email sending abstraction: console transport (dev), provider later | `email/index.ts` |
-| `ai` | service interfaces only — no implementations until Phase 7 | `ai/index.ts` |
+| `ai` | content generation behind `AiContentService` (OpenAI-compatible adapter) plus deterministic rule-based campaign review, lead scoring and follow-up drafts | `schemas.ts`, `provider.ts`, `content-service.ts`, `lead-qualification.ts`, `follow-up.ts`, `campaign-assistant.ts`, `service.ts` |
 
 ## 4. Multi-tenancy
 
@@ -111,17 +111,22 @@ All external systems sit behind interfaces so implementations can change without
 |---|---|---|---|
 | File storage | `StorageAdapter` | `LocalStorageAdapter` → `public/uploads` | GCS adapter (Phase 8) — driver selected by `STORAGE_DRIVER` env |
 | Email | `EmailService` | `ConsoleEmailService` (structured log, `delivered: false`) | SMTP/provider (later phase) |
-| AI | `AiContentService`, `AiAssistantService`, `AiLeadScoringService` | none — interfaces only | LLM provider (Phase 7) |
+| AI content | `AiContentService` | OpenAI-compatible chat-completions adapter when `AI_PROVIDER=openai` + `AI_API_KEY`; otherwise `503 ai_not_configured` | same adapter pointed at any compatible endpoint (`AI_BASE_URL`) |
 
 Adapters fail loudly (`throw ApiError.serviceUnavailable`) when selected but unconfigured. Nothing pretends to succeed.
+
+**AI boundaries.** Two kinds of feature live behind `src/modules/ai/`:
+
+- **Provider-backed** (`AiContentService`): ad copy (7.1) and landing-page copy (7.2). One `fetch` to `<AI_BASE_URL>/chat/completions` with a JSON-only prompt; the response is parsed and validated with Zod. Failures map to specific `503` codes — `ai_not_configured`, `ai_provider_auth`, `ai_quota_exhausted`, `ai_provider_rate_limited`, `ai_provider_error`, `ai_invalid_response`, `ai_timeout`, `ai_unavailable` — with messages that never echo the key or raw provider payload. There is no template fallback — that would be simulated AI.
+- **Rule-based** (`AiCampaignAssistantService`, `AiLeadScoringService`, `AiFollowUpService`): campaign review (7.3), lead qualification (7.4) and follow-up drafts (7.5). Deterministic functions over real campaign/lead data, clearly labelled "Rule-based" in the UI. They never call a provider and never forecast outcomes; follow-up drafts are copied or opened in the user's own app, never sent by CampaignHub.
 
 ## 8. Cross-cutting concerns
 
 - **Configuration:** `src/lib/env.ts` — Zod-validated `process.env`, fails fast with a clear message. Secrets only in env files (`.env` untracked; `.env.example` documents them).
 - **Errors:** `src/lib/errors.ts` — `ApiError` + `routeHandler()` wrapper producing `{ error: { code, message, details? } }` JSON envelopes; unknown errors sanitized to 500.
 - **Logging:** `src/lib/logger.ts` — single-line JSON with level, timestamp, context; level via `LOG_LEVEL`.
-- **Rate limiting:** `src/lib/rate-limit.ts` — DB-backed sliding window on `RateLimitLog` (works across instances; no Redis dependency in MVP). Used by public enquiry + auth endpoints.
-- **Audit:** `AuditLog` table written by services on significant operations (login, publish, status change, member invite, admin actions).
+- **Rate limiting:** `src/lib/rate-limit.ts` — DB-backed sliding window on `RateLimitLog` (works across instances; no Redis dependency in MVP). Used by public enquiry + auth endpoints and by AI content generation (20 requests/hour/business).
+- **Audit:** `AuditLog` table written by services on significant operations (login, publish, status change, member invite, admin actions, AI content generation).
 
 ## 9. Deployment topology (Phase 8)
 

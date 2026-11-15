@@ -132,6 +132,25 @@ Pipeline: install → lint → typecheck → unit → integration (with Postgres
   `admin/schemas.test.ts`, 17 tests). Covers admin list query parsing, the
   business-status enum, rupee → paise conversion, feature-list splitting,
   industry/plan create/update transforms and admin validation errors.
+- ✅ Phase 7 unit tests — 267 tests across 29 files (adds `ai/schemas.test.ts`,
+  `ai/cta.test.ts`, `ai/parsing.test.ts`, `ai/prompts.test.ts`,
+  `ai/provider.test.ts`, `ai/campaign-assistant.test.ts`,
+  `ai/lead-qualification.test.ts`, `ai/follow-up.test.ts`; 74 tests). Covers
+  input bounds and tone enums, CTA label matching, JSON extraction from fenced or
+  chatty completions, copy normalisation and caps, prompt fact packing and honest
+  rules, provider request building plus every failure mapping (auth, quota,
+  throttling, other statuses, empty/unreadable completions, abort, network) with
+  `fetch` stubbed so no credit is spent, and the deterministic review,
+  qualification and follow-up rules.
+- ✅ Manual e2e against the live database (2026-11-15, AI): `GET
+  /api/ai/status` reported `openai`/`gpt-4o-mini`; campaign review, lead
+  qualification (`warm`, 63/100, eight listed reasons) and the follow-up plan
+  (priority, timing, call/WhatsApp/email drafts) all returned `200` with
+  `basedOn: "rules"`; short `productDetails` → `400`; anonymous → `401`; MEMBER
+  ad-copy → `403`; MEMBER qualification on an unassigned lead → `404`, on their
+  own lead → `200`. The provider account had no credits, so both generation
+  endpoints returned `503 ai_quota_exhausted` and produced no copy — the exact
+  honest failure the adapter is designed for.
 - ✅ Manual e2e against the live database (2026-11-15, platform admin):
   statistics/business/industry/plan/campaign APIs returned `200` with live
   data; search and filters worked; suspend → public page `404` → reactivate

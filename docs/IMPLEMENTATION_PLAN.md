@@ -135,11 +135,47 @@ scope).
 
 | # | Task | Status |
 |---|---|---|
-| 7.1 | Choose provider; implement `AiContentService` (headlines/descriptions/CTA) | ☐ |
-| 7.2 | Landing-page content generation | ☐ |
-| 7.3 | Campaign assistant (audience/improvement suggestions) | ☐ |
-| 7.4 | Lead qualification (transparent rule-based scoring first, LLM assist later) | ☐ |
-| 7.5 | Follow-up assistant | ☐ |
+| 7.1 | Choose provider; implement `AiContentService` (headlines/descriptions/CTA) | ✅ |
+| 7.2 | Landing-page content generation | ✅ |
+| 7.3 | Campaign assistant (audience/improvement suggestions) | ✅ |
+| 7.4 | Lead qualification (transparent rule-based scoring first, LLM assist later) | ✅ |
+| 7.5 | Follow-up assistant | ✅ |
+
+**Phase 7 verification (2026-11-15):** `npm run lint` clean · `npm run typecheck`
+clean · `npm run test` 267/267 passing (29 files, 74 new AI tests) · `npm run
+build` succeeds (72 route entries, including the 6 new AI API routes). Live against
+local PostgreSQL and a real OpenAI-compatible endpoint: `GET /api/ai/status`
+returned `{ configured: true, provider: "openai", model: "gpt-4o-mini" }`; a
+campaign review returned `200 basedOn: "rules"` with a content-gap improvement
+and the measured "converting at 50.0% from 87 page views" note; lead
+qualification returned `200` with `category: "warm"`, `score: 63` and eight
+listed reasons; the follow-up plan returned `200` with priority, next action,
+timing and call/WhatsApp/email drafts containing the lead's own details and
+`cautions: []`. Guard rails: a 9-character `productDetails` returned `400
+validation_failed`; anonymous access returned `401 unauthorized`; a MEMBER
+`POST /api/ai/ad-copy` returned `403`; a MEMBER requesting qualification for a
+lead assigned to someone else returned `404 not_found` (no existence leak) while
+their own lead returned `200`.
+
+**Provider caveat:** the supplied OpenAI key authenticates (`/v1/models` → `200`,
+`gpt-4o-mini` listed) but its account has no credits left, so chat completions
+return `429 insufficient_quota` / `credit_balance_exhausted`. The adapter maps
+this to `503 ai_quota_exhausted` with an actionable message and generates no
+copy — verified live for both `/api/ai/ad-copy` and `/api/ai/landing-content`.
+Adding credits in the OpenAI billing dashboard is the only remaining step to see
+real LLM output; the unit tests stub `fetch` so the success path, timeouts,
+auth errors and malformed responses are covered without spending credit.
+
+**Notes:** Ad copy and landing copy are the only provider-backed features; the
+campaign assistant, lead qualification and follow-up drafts are deterministic
+rule-based functions (labelled "Rule-based" in the UI, returning `basedOn:
+"rules"`) that work with no provider configured. Generation is Owner/Admin only,
+limited to 20 requests/hour/business, and audited (`ai.ad_copy_generated`,
+`ai.landing_content_generated`). Prompts forbid invented statistics, awards,
+testimonials, guarantees and ad-platform publishing claims. Drafts are copied or
+opened in the user's own dialler/WhatsApp/email app — CampaignHub never sends
+them. `requireApiBusinessContext()` now returns `401` for unauthenticated API
+callers and reserves `403` for signed-in users without an active business.
 
 ## Phase 8 — Production readiness
 
@@ -156,3 +192,4 @@ scope).
 
 - Phase 1 is complete and verified against the local PostgreSQL 14 database.
 - Phase 2 depends on Phase 1 auth plumbing; Phase 3 on industries + storage; Phase 4 on 3.7/3.8; Phase 5 on 4.1.
+- Phase 7 depends on Phase 3 campaign content and Phase 4 lead data; its provider adapter is optional at runtime (`AI_PROVIDER=none` keeps the app fully functional).

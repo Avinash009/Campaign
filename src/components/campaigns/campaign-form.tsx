@@ -20,6 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { AiWritingPanel } from "@/components/campaigns/ai-writing-panel"
 import { apiFetch, ApiClientError } from "@/lib/api-client"
 import {
   CTA_LABELS,
@@ -49,6 +50,8 @@ interface CampaignFormProps {
   campaignLimit: number | null
   campaignsUsed: number
   planName: string | null
+  /** True when an AI provider is configured; the panel explains when it is not. */
+  aiConfigured: boolean
 }
 
 const EDITABLE_FIELDS = new Set<string>([
@@ -94,6 +97,7 @@ export function CampaignForm({
   campaignLimit,
   campaignsUsed,
   planName,
+  aiConfigured,
 }: CampaignFormProps) {
   const router = useRouter()
   const [pending, setPending] = useState(false)
@@ -104,6 +108,7 @@ export function CampaignForm({
     control,
     handleSubmit,
     getValues,
+    setValue,
     setError,
     formState: { errors, isDirty },
   } = useForm<CampaignFormValues, unknown, CampaignInput>({
@@ -278,6 +283,49 @@ export function CampaignForm({
           </div>
         </CardContent>
       </Card>
+
+      <AiWritingPanel
+        aiConfigured={aiConfigured}
+        disabled={pending}
+        readForm={() => {
+          const values = getValues()
+          return {
+            name: values.name ?? "",
+            industrySlug: values.industrySlug ?? "",
+            productDetails: values.productDetails ?? "",
+            offerDetails: values.offerDetails ?? "",
+            targetAudience: values.targetAudience ?? "",
+            targetLocation: values.targetLocation ?? "",
+            priceDisplay: values.priceDisplay ?? "",
+          }
+        }}
+        onApply={(fields) => {
+          if (fields.headline !== undefined) {
+            setValue("headline", fields.headline, { shouldDirty: true, shouldValidate: true })
+          }
+          if (fields.promoDescription !== undefined) {
+            setValue("promoDescription", fields.promoDescription, {
+              shouldDirty: true,
+              shouldValidate: true,
+            })
+          }
+          if (fields.productDetails !== undefined) {
+            setValue("productDetails", fields.productDetails, {
+              shouldDirty: true,
+              shouldValidate: true,
+            })
+          }
+          if (fields.offerDetails !== undefined) {
+            setValue("offerDetails", fields.offerDetails, {
+              shouldDirty: true,
+              shouldValidate: true,
+            })
+          }
+          if (fields.ctaType) {
+            setValue("ctaType", fields.ctaType, { shouldDirty: true, shouldValidate: true })
+          }
+        }}
+      />
 
       <Card>
         <CardHeader>

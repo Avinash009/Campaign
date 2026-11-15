@@ -35,6 +35,12 @@ Required env vars (see `.env.example` for all):
 | `DATABASE_URL` | PostgreSQL connection string |
 | `AUTH_SECRET` | Auth.js session secret (`openssl rand -base64 32`) |
 
+Optional: AI content generation is disabled by default (`AI_PROVIDER="none"`).
+Set `AI_PROVIDER="openai"` and `AI_API_KEY` (optionally `AI_MODEL`,
+`AI_BASE_URL`, `AI_TIMEOUT_MS`) to enable ad-copy and landing-copy generation.
+The rule-based campaign review, lead qualification and follow-up drafts work
+without a provider for generation.
+
 ### Seeded accounts (development only)
 
 The seed script is idempotent and creates fictional demo data
@@ -84,10 +90,10 @@ Agent/contributor rules live in `AGENTS.md` — read them before changing code.
 ## Roadmap
 
 1. ✅ Phase 1 — foundation (schema, auth plumbing, shells, marketing site)
-2. Phase 2 — registration, login, onboarding, team invites
-3. Phase 3 — campaigns + industry landing pages (`/c/{slug}`)
-4. Phase 4 — lead pipeline, follow-ups, CSV export
-5. Phase 5 — analytics (views, visitors, conversion)
-6. Phase 6 — platform administration
-7. Phase 7 — AI features (behind real integrations)
+2. ✅ Phase 2 — registration, login, onboarding, team invites
+3. ✅ Phase 3 — campaigns + industry landing pages (`/c/{slug}`)
+4. ✅ Phase 4 — lead pipeline, follow-ups, CSV export
+5. ✅ Phase 5 — analytics (views, visitors, conversion)
+6. ✅ Phase 6 — platform administration
+7. ✅ Phase 7 — AI features (behind real integrations)
 8. Phase 8 — Docker, Cloud Run deployment, e2e tests

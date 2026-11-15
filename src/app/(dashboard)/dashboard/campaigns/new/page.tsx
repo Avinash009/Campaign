@@ -5,6 +5,7 @@ import { ArrowLeft } from "lucide-react"
 import { CampaignForm } from "@/components/campaigns/campaign-form"
 import { requireBusinessContext } from "@/modules/auth/session"
 import { canWriteCampaigns } from "@/modules/auth/rbac"
+import { getAiStatus } from "@/modules/ai/service"
 import type { CampaignFormValues } from "@/modules/campaigns/schemas"
 import { getCampaignFormContext } from "@/modules/campaigns/service"
 
@@ -71,6 +72,7 @@ export default async function NewCampaignPage() {
         campaignLimit={formContext.campaignLimit}
         campaignsUsed={formContext.campaignsUsed}
         planName={formContext.planName}
+        aiConfigured={getAiStatus().configured}
       />
     </div>
   )

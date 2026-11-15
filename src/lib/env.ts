@@ -22,6 +22,14 @@ const envSchema = z.object({
   // Email
   EMAIL_DRIVER: z.enum(["console"]).default("console"),
 
+  // AI content generation (optional). "none" keeps generation disabled: the
+  // endpoints return an explicit not-configured error instead of inventing copy.
+  AI_PROVIDER: z.enum(["none", "openai"]).default("none"),
+  AI_API_KEY: z.string().trim().optional(),
+  AI_MODEL: z.string().trim().default("gpt-4o-mini"),
+  AI_BASE_URL: z.url().default("https://api.openai.com/v1"),
+  AI_TIMEOUT_MS: z.coerce.number().int().min(1000).max(120_000).default(30_000),
+
   // Bootstrap admin (seed script)
   ADMIN_EMAIL: z.email().optional(),
   ADMIN_PASSWORD: z.string().min(8).optional(),

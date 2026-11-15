@@ -28,6 +28,7 @@ Common codes: `validation_failed`, `unauthorized`, `forbidden`, `not_found`, `co
 | Campaigns | `/api/campaigns/*` | Member: read; Owner/Admin: write |
 | Leads | `/api/leads/*` | Member: assigned leads + notes/status on assigned; Owner/Admin: all in business |
 | Analytics | `/api/analytics/*` | Any active member |
+| AI | `/api/ai/*` | Content generation: Owner/Admin; review/qualification/follow-up: any active member (members only for leads assigned to them) |
 | Admin | `/api/admin/*` | Platform admin only |
 
 ## 3. Endpoint catalog
@@ -142,12 +143,53 @@ responses use `{ data, meta: { page, pageSize, total, totalPages } }`.
 | PATCH | `/api/admin/plans/:id` | partial fields incl. `amountRupees`, limits, `featuresText` and `isActive`; deactivation hides the plan from pricing | ✅ P6 |
 | GET | `/api/admin/campaigns?page&pageSize&status&search` | read-only cross-tenant monitor: business, status, page views, enquiries, leads; search matches campaign name/slug and business name/slug | ✅ P6 |
 
+### AI assistance (P7)
+
+Content generation needs a configured provider (`AI_PROVIDER=openai` plus
+`AI_API_KEY`, `AI_MODEL`, `AI_BASE_URL`). With `AI_PROVIDER=none` the generation
+endpoints return `503 ai_not_configured` and no fallback copy is produced. Both
+generation routes are Owner/Admin only and limited to 20 requests/hour/business;
+successful calls are audit-logged (`ai.ad_copy_generated`,
+`ai.landing_content_generated`).
+
+Provider failures are mapped to specific `503` codes so the UI can explain what
+to fix. Messages never echo the API key or the raw provider body.
+
+| Code | Meaning |
+|---|---|
+| `ai_not_configured` | `AI_PROVIDER=none`, no `AI_API_KEY`, or an unsupported provider |
+| `ai_provider_auth` | the provider rejected the key (`401`/`403`) — check `AI_API_KEY` |
+| `ai_quota_exhausted` | no credits or quota reached (`insufficient_quota`, `credit_balance_exhausted`, `billing_hard_limit_reached`) — add credits in the provider dashboard |
+| `ai_provider_rate_limited` | provider-side throttling (`429`), retry shortly |
+| `ai_provider_error` | any other non-2xx provider response |
+| `ai_invalid_response` | empty completion or unreadable JSON/text |
+| `ai_timeout` | the provider exceeded `AI_TIMEOUT_MS` |
+| `ai_unavailable` | network/DNS failure reaching the provider |
+
+The review, qualification and follow-up endpoints are deterministic rule-based
+reads. They never call a provider and return `basedOn: "rules"` so the UI can
+label them honestly. They are available to any active member, and lead endpoints
+inherit the lead-detail assignment scoping (members only see their own leads).
+
+| Method | Path | Description | Status |
+|---|---|---|---|
+| GET | `/api/ai/status` | `{ configured, provider, model }` for the current deployment | ✅ P7 |
+| POST | `/api/ai/ad-copy` | `{ industrySlug?, productDetails, offerDetails?, targetAudience?, tone?: professional\|friendly\|urgent }` → `200 { data: { headlines[], descriptions[], suggestedCtas[] }, meta: { provider, model, tone } }`; `400 validation_failed`, `403`, `429 rate_limited`, `503` | ✅ P7 |
+| POST | `/api/ai/landing-content` | `{ campaignName, industrySlug?, productDetails, offerDetails?, targetAudience?, targetLocation?, priceDisplay?, tone? }` → `200 { data: { headline, promoDescription, productDetails, offerDetails, suggestedCta, suggestedCtaLabel }, meta }`; same error codes | ✅ P7 |
+| GET | `/api/ai/campaigns/:id/review` | 30-day rule-based review of content gaps and measured landing-page activity → `200 { data: { campaignId, period: "30d", periodLabel, basedOn: "rules", suggestions[] } }` | ✅ P7 |
+| GET | `/api/ai/leads/:id/qualification` | transparent score with every point listed → `200 { data: { leadId, basedOn: "rules", qualification: { category: hot\|warm\|cold, score, reasons[], suggestedQuestions[] } } }` | ✅ P7 |
+| GET | `/api/ai/leads/:id/follow-up` | rule-based plan and drafts → `200 { data: { leadId, basedOn: "rules", plan: { priority, summary, nextAction, suggestedWhen, messages[], cautions[] } } }` | ✅ P7 |
+
 ### Health
 
 | Method | Path | Description | Status |
 |---|---|---|---|
 | GET | `/api/health` | `{ status, database }` — used by Cloud Run checks | ✅ P1 |
 
-## 4. Webhooks / AI (future)
+## 4. Webhooks (future)
 
-AI generation endpoints are designed as thin wrappers over `src/modules/ai/` service interfaces (Phase 7). No endpoint will be exposed before a real provider integration exists.
+There are no ad-platform webhooks or publishing endpoints. CampaignHub does not
+push campaigns to Google Ads or Meta Ads, and no endpoint claims to. When an
+ad-platform integration is added it must follow the same rule as AI: an explicit
+adapter interface, an env-selected implementation, and a clear "not configured"
+error instead of a simulated success.

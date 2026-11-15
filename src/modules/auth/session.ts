@@ -88,6 +88,9 @@ export async function requireApiUser() {
 
 /** Requires an active business membership in a route handler. */
 export async function requireApiBusinessContext(): Promise<BusinessContext> {
+  const session = await auth()
+  if (!session?.user?.id) throw ApiError.unauthorized()
+
   const context = await getBusinessContext()
   if (!context) {
     throw ApiError.forbidden("You need an active business profile to do that.")

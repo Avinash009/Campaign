@@ -24,10 +24,12 @@ import {
 } from "@/components/ui/card"
 import { CampaignActions } from "@/components/campaigns/campaign-actions"
 import { CampaignImageManager } from "@/components/campaigns/campaign-image-manager"
+import { CampaignReviewCard } from "@/components/campaigns/campaign-review-card"
 import { CampaignStatusBadge } from "@/components/shared/status-badge"
 import { requireBusinessContext } from "@/modules/auth/session"
 import { ApiError } from "@/lib/errors"
 import { canWriteCampaigns } from "@/modules/auth/rbac"
+import { getCampaignReview } from "@/modules/ai/service"
 import { CTA_LABELS, OBJECTIVE_LABELS } from "@/modules/campaigns/labels"
 import { CAMPAIGN_STATUS_LABELS } from "@/modules/campaigns/lifecycle"
 import { getCampaignDetail, publishBlockers } from "@/modules/campaigns/service"
@@ -87,6 +89,7 @@ export default async function CampaignDetailPage({
   const editable = canManage && campaign.status !== "ARCHIVED"
   const blockers = publishBlockers(campaign)
   const isPublic = campaign.status === "ACTIVE"
+  const review = await getCampaignReview(context, campaign.id)
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">
@@ -196,6 +199,8 @@ export default async function CampaignDetailPage({
               )}
             </CardContent>
           </Card>
+
+          <CampaignReviewCard review={review} />
 
           <Card>
             <CardHeader>

@@ -4,6 +4,100 @@ All notable changes to CampaignHub are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/); versioning is
 [SemVer](https://semver.org/).
 
+## [0.7.0] — 2026-11-15 (Session 7: AI integration)
+
+### Added
+
+- AI module (`src/modules/ai/`) behind interfaces: `AiContentService`
+  (provider-backed), `AiCampaignAssistant`, `AiLeadQualificationService` and
+  `AiFollowUpService` (rule-based), plus Zod input schemas, prompt builders, CTA
+  matching, response parsing and tenant orchestration in `service.ts`.
+- Provider adapter for any OpenAI-compatible chat-completions endpoint
+  (`provider.ts`): one `fetch` call, `AI_PROVIDER` / `AI_API_KEY` / `AI_MODEL` /
+  `AI_BASE_URL` / `AI_TIMEOUT_MS`, strict timeout, no SDK and no fallback text.
+  `AI_PROVIDER=none` (the default) keeps the app fully functional with
+  generation disabled.
+- Ad copy generation (`headlines`, `descriptions`, `suggestedCtas`) and
+  landing-page content generation (headline, promo description, product details,
+  offer, suggested CTA), both Owner/Admin only, limited to 20 requests per hour
+  per business and audited (`ai.ad_copy_generated`,
+  `ai.landing_content_generated`).
+- AI API routes: `GET /api/ai/status`, `POST /api/ai/ad-copy`,
+  `POST /api/ai/landing-content`, `GET /api/ai/campaigns/:id/review`,
+  `GET /api/ai/leads/:id/qualification`, `GET /api/ai/leads/:id/follow-up`.
+- Campaign form AI panel (new/edit campaign): tone select, ad-copy and
+  landing-content generation, per-item "Use" and "Use all" that only fill the
+  editable fields (never save), the provider/model footnote, and an honest
+  explanation when no provider is configured.
+- Rule-based campaign review card on campaign detail: content gaps and measured
+  last-30-day landing-page activity, each item naming the field or number to act
+  on, with a "Rule-based" badge.
+- Rule-based lead qualification card on lead detail: hot/warm/cold category, a
+  `/100` score where every point is listed, and questions worth asking. No
+  probability or purchase prediction is shown.
+- Rule-based follow-up assistant card on lead detail: priority, summary, next
+  action, suggested timing, cautions, and call/WhatsApp/email drafts with
+  copy-to-clipboard and open-in-dialler/WhatsApp/email links. CampaignHub never
+  sends a message.
+- 74 unit tests across 8 files (`schemas`, `cta`, `parsing`, `prompts`,
+  `provider`, `campaign-assistant`, `lead-qualification`, `follow-up`), including
+  stubbed-`fetch` coverage of success, `401`/`403`, quota exhaustion, generic
+  `429`, other statuses, empty/unreadable completions, aborts and network
+  failures.
+
+### Changed
+
+- Provider failures now map to specific `503` codes instead of one generic
+  error: `ai_not_configured`, `ai_provider_auth`, `ai_quota_exhausted`,
+  `ai_provider_rate_limited`, `ai_provider_error`, `ai_invalid_response`,
+  `ai_timeout`, `ai_unavailable`. Messages never echo the API key or the raw
+  provider payload, and provider logs record `errorType`/`errorCode`.
+- `requireApiBusinessContext()` now returns `401 unauthorized` for unauthenticated
+  API callers and reserves `403 forbidden` for signed-in users without an active
+  business (previously both returned `403`).
+
+### Decisions
+
+- Two honest layers: only ad copy and landing copy are model-generated; the
+  campaign assistant, lead qualification and follow-up drafts are deterministic
+  functions over the business's own data, labelled "Rule-based" and returning
+  `basedOn: "rules"`. No fake AI and no predicted outcomes.
+- If no provider is configured (or the provider fails), the generation endpoints
+  fail with an actionable error. There is no template fallback that could look
+  like model output.
+- Prompts forbid invented statistics, awards, customer quotes, guarantees and
+  any claim that CampaignHub publishes to Google/Meta Ads. Only user-supplied
+  facts are used.
+- Generation is a write-like action (costs money, produces campaign content), so
+  it is restricted to owners/admins, rate-limited per business and audited;
+  rule-based reads follow the normal member scoping (members only see their own
+  leads).
+- Drafted messages are never sent by the platform: the user copies the text or
+  opens their own phone, WhatsApp or email app.
+
+### Verified
+
+- No Prisma migration needed. `npm run lint` clean · `npm run typecheck` clean ·
+  `npm run test` 267/267 passing (29 files) · `npm run build` succeeds.
+- Live against local PostgreSQL with a real OpenAI-compatible configuration:
+  `GET /api/ai/status` → `{ configured: true, provider: "openai", model:
+  "gpt-4o-mini" }`; campaign review `200` with `basedOn: "rules"` (content-gap
+  improvement plus "converting at 50.0% from 87 page views"); lead qualification
+  `200` with `category: "warm"`, `score: 63` and eight listed reasons; follow-up
+  `200` with priority, next action, timing and call/WhatsApp/email drafts built
+  from the lead's own details.
+- Guard rails verified live: short `productDetails` → `400 validation_failed`;
+  anonymous → `401 unauthorized`; MEMBER `POST /api/ai/ad-copy` → `403`; MEMBER
+  qualification for a lead assigned to someone else → `404 not_found`, their own
+  lead → `200`.
+- Provider caveat: the configured OpenAI key authenticates (`/v1/models` →
+  `200`, `gpt-4o-mini` present) but its account has no credits, so chat
+  completions return `429 insufficient_quota` / `credit_balance_exhausted`. Both
+  generation endpoints returned `503 ai_quota_exhausted` with an actionable
+  message and produced no copy. Adding credits in the provider dashboard is the
+  only remaining step for live model output; the success path is covered by the
+  stubbed-`fetch` tests.
+
 ## [0.6.0] — 2026-11-15 (Session 6: Platform administration)
 
 ### Added
